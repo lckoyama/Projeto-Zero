@@ -1,0 +1,10 @@
+WIDTH, HEIGHT = 1200, 800
+FPS = 60
+TITLE = "Protocolo Zero — O Mistério da Invasão Bancária"
+BG = (12, 18, 29)
+PANEL = (23, 34, 49)
+TEXT = (224, 234, 244)
+MUTED = (156, 178, 198)
+BLUE = (58, 174, 231)
+RED = (236, 92, 104)
+GREEN = (102, 216, 167)
