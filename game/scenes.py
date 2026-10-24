@@ -8,9 +8,11 @@ from game.inventory import Inventory
 from game.map import BankMap, ROOM_NAMES
 from game.player import Player
 from game.puzzles import PUZZLES, validate
+from game.abilities import ABILITIES, AbilitySystem
+from game.ability_scenes import AbilityScenes
 
 
-class Game:
+class Game(AbilityScenes):
     def __init__(self):
         pygame.init()
         self.screen = pygame.display.set_mode((s.WIDTH, s.HEIGHT))
@@ -30,6 +32,12 @@ class Game:
         self.bank = BankMap()
         self.player = Player()
         self.inventory = Inventory()
+        self.abilities = AbilitySystem()
+        self.active_person = None
+        self.record_person = "Seu Antônio"
+        self.ability_feedback = ""
+        self.ability_success = False
+        self.save_message = ""
         self.talked = set()
         self.analysis_done = False
         self.puzzle_index = 0
@@ -69,12 +77,14 @@ class Game:
         self.scene = scene
 
     def show_dialogue(self, title, body):
+        self.active_person = None
         self.dialogue_title, self.dialogue_body = title, body
         self.scene = "dialogue"
 
     def nearest(self):
         targets = [("person", person) for person in CHARACTERS]
-        targets += [("evidence", item) for item in EVIDENCE] + [("computer", COMPUTER)]
+        targets += [("evidence", item) for item in EVIDENCE
+                    if self.abilities.visible(item["id"])] + [("computer", COMPUTER)]
         nearby = [(pygame.Vector2(item["pos"]).distance_to(self.player.rect.center), kind, item)
                   for kind, item in targets]
         distance, kind, item = min(nearby, key=lambda entry: entry[0])
@@ -90,11 +100,18 @@ class Game:
             self.talked.add(item["name"])
             self.show_dialogue(item["name"], item["role"] + "\n" + item["skill"]
                                + "\n\n" + "\n\n".join(item["lines"]))
+            self.active_person = item["name"]
         elif kind == "evidence":
+            self.abilities.inspected.add(item["id"])
+            reason = self.abilities.lock_reason(item["id"])
+            if reason:
+                self.show_dialogue(item["object"], reason)
+                return
             new = self.inventory.collect(item["id"])
             self.show_dialogue(item["title"], item["text"] +
                                ("\n\nEvidência adicionada ao inventário." if new else "\n\nEvidência já coletada."))
         else:
+            self.abilities.inspected.add("computer")
             self.show_dialogue(item["object"], item["text"])
 
     def answer(self, index):
@@ -137,7 +154,7 @@ class Game:
             if key == pygame.K_ESCAPE:
                 if self.scene == "world":
                     self.scene = "pause"
-                elif self.scene in ("dialogue", "inventory", "map", "board", "pause"):
+                elif self.scene in ("dialogue", "inventory", "map", "board", "pause", "ability", "ability_records"):
                     self.scene = "world"
                 elif self.scene in ("puzzle", "conclusion", "error"):
                     self.scene = "board"
@@ -155,8 +172,11 @@ class Game:
                     self.scene = "map"
                 elif key == pygame.K_j:
                     self.scene = "board"
-            elif self.scene == "dialogue" and key in (pygame.K_e, pygame.K_RETURN, pygame.K_SPACE):
-                self.scene = "world"
+            elif self.scene == "dialogue":
+                if key == pygame.K_h:
+                    self.open_ability()
+                elif key in (pygame.K_e, pygame.K_RETURN, pygame.K_SPACE):
+                    self.scene = "world"
             elif self.scene == "intro" and key == pygame.K_RETURN:
                 self.scene = "world"
             elif self.scene == "puzzle":
@@ -176,6 +196,8 @@ class Game:
             pygame.draw.circle(self.screen, color, person["pos"], 13)
             self.text(person["name"], person["pos"][0] - 42, person["pos"][1] + 19, 145, small=True)
         for item in EVIDENCE + [COMPUTER]:
+            if not self.abilities.visible(item.get("id")):
+                continue
             collected = self.inventory.contains(item.get("id"))
             color = s.GREEN if collected else (238, 181, 99)
             x, y = item["pos"]
@@ -208,6 +230,8 @@ class Game:
 
     def draw_board(self):
         self.title("Painel de investigação", "FASE 3 / ANÁLISE → FASE 4 / LÓGICA → FASE 5 / CONCLUSÃO")
+        self.button(f"Habilidades: {len(self.abilities.used)}/7 • consultar registros", (60, 640, 600, 56),
+                    lambda: self.set_scene("ability_records"))
         count = len(self.inventory.ids)
         self.text(f"Evidências reunidas: {count}/8  •  Desafios resolvidos: {self.puzzle_index}/{len(PUZZLES)}", y=130, color=s.BLUE)
         notes = [
@@ -271,6 +295,8 @@ class Game:
             self.button("Sair", (60, 500, 480, 60), lambda: setattr(self, "running", False))
             if self.has_game:
                 self.button("Retomar investigação", (60, 580, 480, 60), lambda: self.set_scene("world"))
+            self.button("Carregar partida salva", (620, 340, 520, 60), self.load_game)
+            self.text(self.save_message, 620, 430, 520, s.MUTED)
             self.text("Resolução de Problemas com Lógica Matemática • protótipo local", y=735, small=True, color=s.MUTED)
         elif self.scene == "instructions":
             self.title("Como investigar")
@@ -281,7 +307,8 @@ class Game:
                       "No painel, organize os laudos e resolva os oito desafios. A conclusão exige todos os desafios corretos.\n\n"
                       "Nos desafios, use 1–3 ou clique. Leia a explicação e pressione Enter. Erros permitem nova tentativa.\n"
                       "Símbolos: ¬ não; ∧ e; ∨ ou inclusivo; → se... então; ↔ se e somente se.\n\n"
-                      "A partida permanece na memória ao voltar ao menu. Fechar o jogo ou começar de novo reinicia o progresso.", y=140)
+                      "Nos diálogos, use H ou o botão para consultar a habilidade. Examine os objetos solicitados antes de ativá-la.\n"
+                      "Para salvar, pressione Esc no banco e escolha Salvar progresso. Carregue pelo menu ou pela pausa.", y=140)
             self.button("Voltar ao menu", (60, 710, 300, 56), lambda: self.set_scene("menu"))
         elif self.scene == "intro":
             self.title("Fase 1 / O incidente")
@@ -290,7 +317,15 @@ class Game:
         elif self.scene == "dialogue":
             self.title(self.dialogue_title)
             self.text(self.dialogue_body, y=150)
+            if self.active_person:
+                ability = ABILITIES[self.active_person]
+                self.text(ability["name"] + " — " + ability["description"], y=520, color=s.BLUE)
+                self.button("Consultar habilidade [H]", (60, 625, 500, 56), self.open_ability)
             self.button("Continuar [E / Enter]", (60, 710, 430, 56), lambda: self.set_scene("world"))
+        elif self.scene == "ability":
+            self.draw_ability()
+        elif self.scene == "ability_records":
+            self.draw_ability_records()
         elif self.scene == "inventory":
             self.draw_inventory()
         elif self.scene == "board":
@@ -316,6 +351,9 @@ class Game:
             self.button("Continuar", (60, 200, 450, 60), lambda: self.set_scene("world"))
             self.button("Menu inicial", (60, 280, 450, 60), lambda: self.set_scene("menu"))
             self.button("Sair do jogo", (60, 360, 450, 60), lambda: setattr(self, "running", False))
+            self.button("Salvar progresso", (60, 440, 450, 60), self.save_game)
+            self.button("Carregar partida salva", (60, 520, 450, 60), self.load_game)
+            self.text(self.save_message, y=610)
         elif self.scene == "error":
             self.title("Hipótese ainda não sustentada")
             self.text("A combinação escolhida não corresponde ao conjunto dos laudos. Revise as evidências, "

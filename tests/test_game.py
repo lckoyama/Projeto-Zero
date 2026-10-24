@@ -13,6 +13,7 @@ from game.case_data import CHARACTERS
 from game.evidence import COMPUTER, EVIDENCE
 from game.puzzles import PUZZLES, validate
 from game.scenes import Game
+from game.abilities import ABILITIES
 
 
 class GameTests(unittest.TestCase):
@@ -52,6 +53,22 @@ class GameTests(unittest.TestCase):
         game.submit()
         self.assertNotEqual(game.scene, "victory")
         for item in EVIDENCE:
+            if game.abilities.visible(item["id"]):
+                game.player.rect.center = item["pos"]
+                game.interact()
+        game.player.rect.center = COMPUTER["pos"]
+        game.interact()
+        for person in CHARACTERS:
+            game.player.rect.center = person["pos"]
+            game.interact()
+            game.open_ability()
+            game.draw()
+            choice = 1 if person["name"] == "Bianca" else "20h45" if person["name"] == "Jonas" else None
+            game.use_ability(choice)
+            self.assertTrue(game.ability_success, game.ability_feedback)
+            game.draw()
+        self.assertEqual(game.abilities.used, set(ABILITIES))
+        for item in EVIDENCE:
             game.player.rect.center = item["pos"]
             game.interact()
             self.assertEqual(game.scene, "dialogue")
@@ -77,7 +94,7 @@ class GameTests(unittest.TestCase):
         game.submit()
         self.assertEqual(game.scene, "victory")
         for scene in ["menu", "instructions", "intro", "world", "dialogue", "inventory",
-                      "board", "map", "pause", "conclusion", "error", "victory"]:
+                      "board", "map", "pause", "conclusion", "error", "victory", "ability_records"]:
             with self.subTest(scene=scene):
                 game.scene = scene
                 game.draw()
