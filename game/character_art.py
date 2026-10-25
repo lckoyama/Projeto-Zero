@@ -23,10 +23,10 @@ class CharacterArt(RoomArt):
     def draw_marker(self, surface, name, position, color, active=False):
         """Pino compacto no cenário; o retrato completo fica nas telas de consulta."""
         center = pygame.Vector2(position)
+        pygame.draw.circle(surface, (7, 14, 24), center, 16)
+        pygame.draw.circle(surface, color, center, 14, 2)
         if active:
-            pygame.draw.circle(surface, (8, 16, 26), center, 20)
-            pygame.draw.circle(surface, color, center, 17, 2)
-        pygame.draw.circle(surface, color, center, 9)
-        pygame.draw.circle(surface, (235, 247, 250), center, 4)
-        pygame.draw.line(surface, color, (center.x, center.y + 9),
-                         (center.x, center.y + 16), 2)
+            pygame.draw.circle(surface, color, center, 21, 2)
+        pygame.draw.circle(surface, color, center, 10)
+        pygame.draw.circle(surface, (245, 255, 255), center, 5)
+        pygame.draw.circle(surface, (32, 110, 121), center, 2)

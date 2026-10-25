@@ -2,7 +2,8 @@
 import pygame
 
 from game import settings as s
-from game.abilities import ABILITIES, DIGITAL_PUZZLE
+from game.abilities import (ABILITIES, ABILITY_CHALLENGES, DIGITAL_PUZZLE,
+                            validate_ability_challenge)
 from game.case_data import CHARACTERS
 from game.savegame import load_progress, save_progress
 
@@ -17,11 +18,25 @@ class AbilityScenes:
         person = next((p for p in CHARACTERS if p["name"] == self.active_person), None)
         if person is None:
             return
+        if person["name"] not in self.talked:
+            self.ability_success = False
+            self.ability_feedback = "Converse com a pessoa antes de utilizar esta habilidade."
+            return
+        legacy_activation = person["name"] != "Bianca" and (
+            choice is None or isinstance(choice, str))
+        if person["name"] != "Bianca" and person["name"] in ABILITY_CHALLENGES and not legacy_activation:
+            correct, detail = validate_ability_challenge(person["name"], choice)
+            if not correct:
+                self.ability_success = False
+                self.ability_feedback = "Revise a inferência. " + detail
+                return
         room = next((i for i, rect in enumerate(self.bank.rooms)
                      if rect.collidepoint(self.player.rect.center)), None)
         nearby = pygame.Vector2(person["pos"]).distance_to(self.player.rect.center) <= 66
+        activation_choice = choice if person["name"] == "Bianca" or (
+            person["name"] == "Jonas" and isinstance(choice, str)) else None
         success, self.ability_feedback = self.abilities.activate(
-            person["name"], room, nearby, self.inventory, choice)
+            person["name"], room, nearby, self.inventory, activation_choice)
         self.ability_success = success
 
     def draw_ability(self):
@@ -37,13 +52,14 @@ class AbilityScenes:
             for index, (label, _) in enumerate(DIGITAL_PUZZLE["options"]):
                 self.button(label, (60 + index * 365, 335, 340, 55),
                             lambda i=index: self.use_ability(i))
-        elif self.active_person == "Jonas":
-            self.text("Compare uma hipótese sobre o horário da apresentação de Arthur com a agenda. As opções abaixo não são novos depoimentos.", y=190)
-            for index, time in enumerate(("20h20", "20h45")):
-                self.button("Comparar " + time, (60 + index * 450, 335, 420, 55),
-                            lambda value=time: self.use_ability(value))
         else:
-            self.button("Utilizar habilidade", (60, 260, 450, 60), self.use_ability)
+            puzzle = ABILITY_CHALLENGES[self.active_person]
+            self.text(puzzle["context"], y=185)
+            for index, (label, _) in enumerate(puzzle["options"]):
+                column = index % 3
+                row = index // 3
+                self.button(label, (60 + column * 365, 335 + row * 75, 340, 55),
+                            lambda i=index: self.use_ability(i))
         if self.ability_feedback and not used:
             self.text(self.ability_feedback, y=435, color=s.GREEN if self.ability_success else s.RED)
         self.button("Voltar ao banco", (60, 710, 350, 56), lambda: self.set_scene("world"))

@@ -126,6 +126,8 @@ class Game(HypothesisUI, DeductionUI, InvestigationUI, AbilityScenes):
                                + "\n\n" + "\n\n".join(item["lines"]))
             self.active_person = item["name"]
         elif kind == "evidence":
+            # Examinar o objeto registra o pré-requisito da perícia; só a
+            # coleta abaixo torna a evidência parte do inventário.
             self.abilities.inspected.add(item["id"])
             reason = self.abilities.lock_reason(item["id"])
             if reason:

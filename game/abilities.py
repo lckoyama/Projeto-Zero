@@ -1,5 +1,5 @@
 """Habilidades e requisitos de investigação, independentes da interface."""
-from game.puzzles import validate
+from game.puzzles import PUZZLES, validate
 
 ABILITIES = {
     "Seu Antônio": {
@@ -53,6 +53,29 @@ DIGITAL_PUZZLE = {
     "options": [("¬L", ("not", "L")), ("L", "L"), ("¬R", ("not", "R"))],
     "explanation": "R e A permitem R ∧ A; com (R ∧ A) → L, Modus Ponens permite L. Isso libera a análise, não uma conclusão sobre a invasão.",
 }
+
+# Desafios de autorização relacionados ao tipo de análise de cada personagem.
+# Bianca mantém o procedimento digital próprio definido acima.
+ABILITY_CHALLENGES = {
+    "Seu Antônio": PUZZLES[0],
+    "Flávio": PUZZLES[2],
+    "Arthur": PUZZLES[4],
+    "Márcia": PUZZLES[5],
+    "Jonas": PUZZLES[7],
+    "Carlos": PUZZLES[6],
+}
+
+
+def validate_ability_challenge(name, choice):
+    """Valida a etapa lógica que autoriza uma habilidade."""
+    if name == "Bianca":
+        puzzle = DIGITAL_PUZZLE
+    else:
+        puzzle = ABILITY_CHALLENGES.get(name)
+    if puzzle is None or type(choice) is not int or not 0 <= choice < len(puzzle["options"]):
+        return False, "Selecione uma opção do desafio."
+    return validate(puzzle, choice)
+
 
 REQUIREMENT_NAMES = {
     "usb": "examinar o pendrive na sala de TI",

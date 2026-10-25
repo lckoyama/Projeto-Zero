@@ -29,12 +29,16 @@ class ItemArt(RoomArt):
         """Pino geométrico discreto; o equipamento é exibido ao inspecionar."""
         color = (102, 216, 167) if collected else (238, 181, 99)
         center = pygame.Vector2(position)
+        pygame.draw.circle(surface, (7, 14, 24), center, 17)
+        pygame.draw.circle(surface, color, center, 15, 2)
         if active:
-            pygame.draw.circle(surface, (8, 16, 26), center, 19)
-            pygame.draw.circle(surface, color, center, 16, 2)
-        points = [(center.x, center.y - 9), (center.x + 9, center.y),
-                  (center.x, center.y + 9), (center.x - 9, center.y)]
+            pygame.draw.circle(surface, color, center, 21, 2)
+        points = [(center.x, center.y - 12), (center.x + 12, center.y),
+                  (center.x, center.y + 12), (center.x - 12, center.y)]
         pygame.draw.polygon(surface, color, points)
-        pygame.draw.circle(surface, (255, 245, 214), center, 3)
+        pygame.draw.polygon(surface, (255, 246, 215),
+                            [(center.x, center.y - 6), (center.x + 6, center.y),
+                             (center.x, center.y + 6), (center.x - 6, center.y)])
         if collected:
-            pygame.draw.circle(surface, color, (center.x + 11, center.y - 11), 4)
+            pygame.draw.circle(surface, (7, 14, 24), (center.x + 13, center.y - 13), 6)
+            pygame.draw.circle(surface, color, (center.x + 13, center.y - 13), 5)

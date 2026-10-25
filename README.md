@@ -55,7 +55,7 @@ O menu permite retomar a partida em memória ou carregar uma partida salva. Use 
 
 ## Habilidades dos personagens
 
-Converse com o personagem usando E, consulte sua habilidade com H ou pelo botão e ative-a na tela seguinte. É necessário estar próximo ao personagem, na sala correspondente, e ter examinado os objetos exigidos. Cada personagem tem uma única habilidade. O painel J oferece **Habilidades: consultar registros**, onde os resultados podem ser relidos.
+Converse com o personagem usando E, consulte sua habilidade com H ou pelo botão e ative-a na tela seguinte. É necessário estar próximo ao personagem, na sala correspondente, ter examinado os objetos exigidos e resolver o desafio lógico de autorização. Bianca usa o procedimento digital próprio; os demais personagens usam, respectivamente, negação, tabela-verdade, equivalência, Modus Ponens, contraexemplo e Modus Tollens. Erros podem ser tentados novamente sem perder progresso. Cada personagem tem uma única habilidade. O painel J oferece **Habilidades: consultar registros**, onde os resultados podem ser relidos.
 
 | Personagem | Habilidade | Como utilizar e verificar |
 | --- | --- | --- |
