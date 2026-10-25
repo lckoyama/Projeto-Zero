@@ -1,12 +1,16 @@
 # Protocolo Zero — O Mistério da Invasão Bancária
 
-Jogo local de investigação top-down, feito apenas com Python e Pygame para a disciplina de Resolução de Problemas com Lógica Matemática. Gráficos geométricos, sem imagens externas, web ou banco de dados.
+Jogo local de investigação top-down, feito apenas com Python e Pygame para a disciplina de Resolução de Problemas com Lógica Matemática. Salas ilustradas com imagens locais, sem web ou banco de dados.
 
 ## Referência visual do projeto
 
 ![Referência visual de Protocolo Zero, com os sete personagens, os itens de investigação e as seis salas do banco](assets/reference/protocolo-zero.png)
 
-Referência para a identidade visual, os personagens e os ambientes. A versão jogável atual utiliza formas geométricas.
+Referência para a identidade visual, os personagens e os ambientes. As seis salas utilizam as ilustrações fornecidas, exibidas no cenário e no mapa (M). Os sete personagens possuem miniaturas no cenário e retratos maiores nos diálogos. Os cinco equipamentos possuem imagens no cenário e na inspeção; as evidências correspondentes também mostram essas imagens no inventário. O investigador controlável e os registros sem arte própria continuam representados por formas geométricas.
+
+As imagens dos personagens são estáticas, exibidas inteiras, com seus fundos originais e sem distorção. A borda azul identifica uma conversa ainda não consultada; a borda verde indica que o personagem já foi ouvido. Se uma imagem estiver ausente ou inválida, o personagem permanece acessível por um marcador circular e pelo diálogo textual.
+
+As imagens isométricas são ilustrações dos ambientes: a movimentação permanece top-down, com portas e colisões delimitadas pelas paredes do mapa. Os móveis desenhados nas imagens são decorativos. As artes são exibidas inteiras e proporcionalmente, sem alterar os pontos de interação.
 
 ## Executar no VS Code
 
@@ -29,15 +33,25 @@ No VS Code, selecione `.venv` em **Python: Select Interpreter**. Uma sessão gr�
 
 ## Controles e progressão
 
+A investigação começa em um painel inspirado em murais de detetive, com interface escura, destaques em ciano, fichas fotográficas e ligações verificáveis. Clique em **Explorar banco** para controlar o investigador e use **J** para retornar ao mural.
+
+- **Catálogo à esquerda:** consulte as sete pessoas, cinco equipamentos, seis locais e as pistas já coletadas. Use Anterior/Próxima quando houver mais fichas.
+- **Abrir ficha:** leia características, habilidades e informações disponíveis. Depoimentos e laudos permanecem bloqueados até serem obtidos na exploração.
+- **Fixar no mural:** adicione a ficha selecionada; arraste-a para organizar. Retirar do mural ou o botão direito remove apenas a ficha visual, sem apagar evidências.
+- **Ligar fichas:** ative e clique em duas fichas para abrir a análise da relação. Escolha o tipo, a evidência e a justificativa lógica. Clique numa linha ou ligue as mesmas fichas para revisar; a opção Retirar ligação a remove.
+- **Organizar / Limpar ligações:** reorganize as posições ou remova as linhas e suas justificativas. As relações não coletam evidências nem resolvem os desafios finais automaticamente.
+- **Linha do tempo:** consulte os horários dos registros descobertos; horários não encontrados ficam ocultos.
+- **Resolver lógica:** fica disponível após reunir as oito pistas. A conclusão exige todos os oito desafios corretos.
+
 - WASD ou setas: mover; E: interagir perto de um marcador.
 - I ou Tab: inventário; M: mapa; J: painel; Esc: voltar/pausar.
-- Mouse: botões; 1–3: respostas dos desafios; Enter: continuar após o feedback.
+- Mouse: botões e lacunas; 1–4: opções do campo selecionado; Tab: próximo campo na mesa de dedução; Enter: verificar ou continuar após o resultado.
 - H durante o diálogo: consultar a habilidade do personagem; clique para utilizá-la.
-- Círculos: sete personagens com fichas e depoimentos. Quadrados: objetos. Marcadores consultados ficam verdes.
+- Retratos: sete personagens com fichas e depoimentos. Ícones dourados: equipamentos. Quadrados dourados: outros registros. Bordas e marcadores ficam verdes após coletar a evidência; no computador interno, após examiná-lo.
 
-As portas das seis salas ficam voltadas ao corredor central. Explore, reúna oito evidências, organize a análise no painel e resolva oito desafios. Só então a reconstrução final fica disponível. Ela pede pessoa, método, equipamento e horário. Erros não apagam o progresso. A solução e a exclusão das hipóteses são apresentadas após acertar a reconstrução.
+As portas das seis salas ficam voltadas ao corredor central. Explore, reúna oito evidências e resolva oito desafios pelo painel. Só então a reconstrução final fica disponível. Ela pede pessoa, método, equipamento e horário. Erros não apagam o progresso. A solução e a exclusão das hipóteses são apresentadas após acertar a reconstrução.
 
-O menu permite retomar a partida em memória ou carregar uma partida salva. No banco, pressione **Esc → Salvar progresso** para gravar em `saves/progress.json`. A pausa também permite carregar. O salvamento é manual e mantém posição, evidências, objetos examinados, habilidades utilizadas, registros do painel e desafios concluídos. Uma resposta ainda não confirmada com Continuar deve ser refeita após carregar. Começar uma nova investigação reinicia a memória, mas só substitui o arquivo anterior quando você salva novamente. O loop limita a atualização a 60 FPS, inclusive em diálogos.
+O menu permite retomar a partida em memória ou carregar uma partida salva. Use **Salvar** no mural ou, no banco, pressione **Esc → Salvar progresso** para gravar em `saves/progress.json`. A pausa também permite carregar. O salvamento é manual e mantém posição, evidências, objetos examinados, habilidades utilizadas, registros do painel, desafios concluídos, fichas fixadas, posições das fichas e ligações de hipóteses. Salvamentos anteriores sem mural continuam compatíveis. Uma resposta ainda não confirmada com Continuar deve ser refeita após carregar. Começar uma nova investigação reinicia a memória, mas só substitui o arquivo anterior quando você salva novamente. O loop limita a atualização a 60 FPS, inclusive em diálogos.
 
 ## Habilidades dos personagens
 
@@ -62,6 +76,41 @@ Para conferir a persistência, utilize uma habilidade, salve na pausa, feche o j
 `game/logic.py` não importa Pygame. Expressões são nomes de variáveis, booleanos ou tuplas: `("implies", "P", "Q")`. O motor avalia negação, conjunção, disjunção inclusiva, condicional e bicondicional; gera todas as valorações; verifica equivalência e consequência semântica; produz contraexemplos.
 
 Os desafios abordam proposições simples e compostas, tabelas-verdade, De Morgan, Modus Ponens, Modus Tollens e afirmação indevida do consequente. Cada resposta é validada pelo motor, sem gabarito por índice. Todos os desafios são obrigatórios para vencer. O motor usa lógica proposicional clássica: premissas inconsistentes acarretam qualquer conclusão; os exercícios de inferência do jogo usam premissas consistentes.
+
+### Hipóteses verificáveis no mural
+
+Ao ligar duas fichas, escolha uma afirmação disponível, uma relação (**confirma o horário**, **contradiz o depoimento** ou **sustenta esta hipótese**) e uma evidência coletada. Complete duas premissas, a conclusão e a regra de inferência. Os campos alternam suas opções ao clicar. Use **Consultar evidência** para reler o laudo e voltar sem perder a justificativa.
+
+Clique em **Verificar relação**. O motor verifica se a fonte corresponde às fichas, se fornece as premissas escolhidas, se a conclusão expressa a relação e se a regra é aplicável. Uma premissa inventada, uma conclusão que apenas repete um fato sem justificar a relação ou uma regra inadequada não bastam.
+
+- **Cinza:** relação pendente ou em edição.
+- **Verde:** afirmação específica verificada a partir das fontes disponíveis.
+- **Vermelho:** justificativa não comprovada; consulte a explicação e revise.
+
+Exemplo para experimentar: obtenha o laudo do pendrive, fixe Bianca e o pendrive e ligue as fichas. A tela permite verificar o horário registrado usando as premissas do laudo. As definições de P e Q e as premissas disponíveis aparecem ao lado dos campos.
+
+As afirmações só aparecem após obter suas fontes. O sistema possui relações modeladas para conexão Wi-Fi, horários do navegador e da reunião, uso do pendrive, detecção do acesso, comprometimento de credenciais e descoberta/análise do transmissor. Fichas sem uma afirmação modelada ficam pendentes; isso não prova ausência de relação.
+
+Os depoimentos oficiais atuais são compatíveis com os registros. **Contradiz o depoimento** exige ouvir a declaração e demonstrar sua negação; o jogo rejeita contradições não sustentadas, sem inventar testemunhos falsos. A ordem temporal não é tratada como prova causal. Para a relação entre evento e credenciais, histórico e laudo são ambos necessários.
+
+Rascunhos e justificativas ficam salvos junto às ligações. O estado de verificação é recalculado ao carregar, e editar um campo torna a relação pendente até nova verificação. Remover uma ficha remove também suas ligações e justificativas. Salvamentos antigos sem justificativas continuam compatíveis.
+
+### Mesa de dedução
+
+A tela organiza o exercício em três colunas: premissas, campos de raciocínio e base da análise. O banco de opções fica abaixo. Clique numa lacuna e depois numa opção para preenchê-la; clique novamente no campo para revisar. **Verificar dedução** avalia o preenchimento completo. Erros permitem corrigir os campos sem perder as escolhas.
+
+1. Complete a negação de uma proposição.
+2. Calcule uma conjunção intermediária e depois a expressão composta.
+3. Preencha individualmente as quatro linhas da tabela-verdade da condicional.
+4. Avalie uma bicondicional numa valoração hipotética.
+5. Monte uma expressão equivalente escolhendo dois termos e um conectivo. Escritas alternativas semanticamente equivalentes são aceitas.
+6. Escolha a conclusão e a regra que justificam a passagem das premissas sobre o evento para o comprometimento de credenciais.
+7. Use as premissas técnicas do transmissor para selecionar uma conclusão e uma regra compatíveis.
+8. Construa um contraexemplo: premissas verdadeiras e conclusão falsa.
+
+Nas inferências, uma conclusão válida com uma regra inadequada não basta. A estrutura da regra e a consequência semântica são verificadas. O contraexemplo é avaliado diretamente com os valores escolhidos. O feedback apresenta explicações e resultados calculados pelo motor.
+
+Quando houver evidências de apoio, use os botões numerados da terceira coluna e **Ler laudo**. É possível voltar à dedução sem perder o preenchimento. Os campos ficam na memória ao retornar ao mural; o salvamento em disco preserva os desafios concluídos, mas uma folha em andamento deve ser refeita ao carregar.
 
 Coincidência temporal não demonstra causalidade. As relações causais usadas são premissas explícitas de laudos fictícios. A condicional material sozinha também não demonstra uma causa real.
 
@@ -95,9 +144,21 @@ Os testes verificam conectivos, tabelas-verdade, equivalências, inferências, a
 - `game/scenes.py`, `game/dialogue.py`: cenas, eventos e texto.
 - `game/inventory.py`, `game/evidence.py`, `game/case_data.py`: coleta e narrativa.
 - `game/logic.py`, `game/puzzles.py`: motor independente e exercícios.
+- `game/deduction.py`, `game/deduction_ui.py`: validação das folhas de raciocínio e interface com lacunas, banco de opções e laudos de apoio.
 - `game/abilities.py`, `game/ability_scenes.py`: habilidades, requisitos, resultados e interface.
 - `game/savegame.py`: salvamento local em JSON e validação do progresso carregado.
+- `game/board.py`: fichas, posições e ligações de hipóteses do mural.
+- `game/hypotheses.py`, `game/hypothesis_ui.py`: relações fundamentadas nas evidências, verificação lógica e interface de justificativa.
+- `game/investigation_ui.py`: menu do caso, mural interativo, dossiês, cronologia e conclusão.
 - `tests/`: testes automatizados do motor lógico e da integração do jogo.
-- `assets/`: locais reservados para arte e áudio opcionais.
+- `game/room_art.py`: carregamento das imagens e cache de versões reduzidas.
+- `assets/rooms/`: imagens de segurança, diretor, lazer, TI, servidores e RH.
+- `game/character_art.py`: miniaturas e retratos dos sete personagens.
+- `assets/characters/`: imagens de Seu Antônio, Bianca, Flávio, Arthur, Márcia, Jonas e Carlos.
+- `game/item_art.py`: ícones e imagens de inspeção dos equipamentos.
+- `assets/items/`: imagens do celular, computador interno, transmissor, notebook e pendrive.
+- `assets/audio/`: local reservado para áudio.
 
-Para adicionar sprites depois, substitua os desenhos em `Player.draw`, `BankMap.draw` e `Game.draw_world`. Mantenha os retângulos de colisão e posições separados da arte. O protótipo não carrega arquivos de assets, portanto imagens/fontes/áudios externos ausentes não impedem sua execução. As fontes usam resolução do sistema com fallback do Pygame.
+Os equipamentos mantêm suas posições, requisitos de habilidade e regras de coleta. O computador interno continua sendo um objeto de contexto, sem adicionar uma nona evidência. As ilustrações são proporcionais e utilizam cache; se uma imagem estiver ausente ou inválida, o marcador geométrico mantém o objeto acessível.
+
+Para adicionar sprites de personagens e objetos depois, substitua os desenhos em `Player.draw` e `Game.draw_world`. Mantenha os retângulos de colisão e posições separados da arte. As imagens das salas são carregadas a partir da pasta do projeto, independentemente do diretório de execução. Se uma imagem estiver ausente ou inválida, a sala utiliza o cenário geométrico básico. As fontes usam resolução do sistema com fallback do Pygame.

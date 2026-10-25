@@ -73,6 +73,7 @@ class AbilityScenes:
     def load_game(self):
         try:
             load_progress(self)
+            self.set_scene("board")
             self.message = "Progresso carregado. Evidências e habilidades restauradas."
         except FileNotFoundError:
             self.save_message = "Nenhuma partida salva foi encontrada."

@@ -1,5 +1,6 @@
-"""Mapa geométrico substituível por sprites, com portas no corredor central."""
+"""Salas ilustradas com colisões e portas no corredor central."""
 import pygame
+from game.room_art import RoomArt
 
 ROOM_NAMES = ["01 / SEGURANÇA", "02 / DIRETOR", "03 / LAZER",
               "04 / TI", "05 / SERVIDORES", "06 / RH"]
@@ -7,6 +8,7 @@ ROOM_NAMES = ["01 / SEGURANÇA", "02 / DIRETOR", "03 / LAZER",
 
 class BankMap:
     def __init__(self):
+        self.art = RoomArt()
         self.rooms = []
         self.walls = [pygame.Rect(15, 80, 1170, 10), pygame.Rect(15, 655, 1170, 10),
                       pygame.Rect(15, 80, 10, 585), pygame.Rect(1175, 80, 10, 585)]
@@ -26,7 +28,12 @@ class BankMap:
                   (25, 43, 65), (24, 36, 57), (40, 43, 53)]
         for index, rect in enumerate(self.rooms):
             pygame.draw.rect(surface, colors[index], rect)
-            surface.blit(font.render(ROOM_NAMES[index], True, (135, 169, 195)), (rect.x + 18, rect.y + 18))
+            illustrated = self.art.draw(surface, index, rect.inflate(-18, -18))
+            label = font.render(ROOM_NAMES[index], True, (195, 221, 240))
+            pygame.draw.rect(surface, (12, 18, 29), (rect.x + 12, rect.y + 12, label.get_width() + 12, label.get_height() + 8), border_radius=4)
+            surface.blit(label, (rect.x + 18, rect.y + 16))
+            if illustrated:
+                continue
             # Mobiliário decorativo, sem bloquear portas ou pistas.
             if index == 4:
                 for offset in (35, 135, 235):

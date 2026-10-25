@@ -6,14 +6,16 @@ os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
 
 import unittest
 from collections import deque
+from itertools import product
 
 import pygame
 
 from game.case_data import CHARACTERS
 from game.evidence import COMPUTER, EVIDENCE
-from game.puzzles import PUZZLES, validate
+from game.puzzles import PUZZLES
 from game.scenes import Game
 from game.abilities import ABILITIES
+from game.deduction import SHEETS, validate_sheet
 
 
 class GameTests(unittest.TestCase):
@@ -75,17 +77,18 @@ class GameTests(unittest.TestCase):
         self.assertEqual(len(game.inventory.ids), 8)
         game.begin_analysis()
         self.assertTrue(game.analysis_done)
-        for puzzle in PUZZLES:
-            wrong = next(index for index in range(len(puzzle["options"]))
-                         if not validate(puzzle, index)[0])
+        for puzzle_index, puzzle in enumerate(PUZZLES):
+            combinations = list(product(*(range(len(choices)) for _, choices in SHEETS[puzzle_index]["fields"])))
+            wrong = next(values for values in combinations if not validate_sheet(puzzle_index, puzzle, values)[0])
             before = game.puzzle_index
-            game.answer(wrong)
+            game.sheet_answers = list(wrong)
+            game.check_sheet()
             game.draw()
             game.next_puzzle()
             self.assertEqual(game.puzzle_index, before)
-            right = next(index for index in range(len(puzzle["options"]))
-                         if validate(puzzle, index)[0])
-            game.answer(right)
+            right = next(values for values in combinations if validate_sheet(puzzle_index, puzzle, values)[0])
+            game.sheet_answers = list(right)
+            game.check_sheet()
             game.draw()
             game.next_puzzle()
         game.submit()

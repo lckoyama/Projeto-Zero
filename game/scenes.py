@@ -7,12 +7,18 @@ from game.evidence import EVIDENCE, COMPUTER
 from game.inventory import Inventory
 from game.map import BankMap, ROOM_NAMES
 from game.player import Player
-from game.puzzles import PUZZLES, validate
+from game.puzzles import PUZZLES
 from game.abilities import ABILITIES, AbilitySystem
 from game.ability_scenes import AbilityScenes
+from game.character_art import CharacterArt
+from game.item_art import ItemArt
+from game.board import BoardState
+from game.investigation_ui import CYAN, InvestigationUI
+from game.deduction_ui import DeductionUI
+from game.hypothesis_ui import HypothesisUI
 
 
-class Game(AbilityScenes):
+class Game(HypothesisUI, DeductionUI, InvestigationUI, AbilityScenes):
     def __init__(self):
         pygame.init()
         self.screen = pygame.display.set_mode((s.WIDTH, s.HEIGHT))
@@ -30,6 +36,11 @@ class Game(AbilityScenes):
 
     def reset(self):
         self.bank = BankMap()
+        self.character_art = CharacterArt()
+        self.item_art = ItemArt()
+        self.board = BoardState()
+        self.setup_board_ui()
+        self.active_item = None
         self.player = Player()
         self.inventory = Inventory()
         self.abilities = AbilitySystem()
@@ -41,6 +52,9 @@ class Game(AbilityScenes):
         self.talked = set()
         self.analysis_done = False
         self.puzzle_index = 0
+        self.reset_sheet()
+        self.sheet_return = False
+        self.relation_return = False
         self.feedback = ""
         self.correct = False
         self.selection = 0
@@ -57,27 +71,37 @@ class Game(AbilityScenes):
 
     def title(self, title, subtitle=""):
         self.screen.fill(s.BG)
-        pygame.draw.rect(self.screen, s.RED, (30, 40, 4, 36))
+        pygame.draw.rect(self.screen, s.RED, (30, 36, 5, 42), border_radius=2)
         self.screen.blit(self.heading.render(title, True, s.TEXT), (60, 36))
+        pygame.draw.line(self.screen, s.EDGE, (60, 88), (1140, 88), 1)
         if subtitle:
             self.text(subtitle, y=82, color=s.MUTED, small=True)
 
     def button(self, label, rect, action, enabled=True):
         rect = pygame.Rect(rect)
         hovered = rect.collidepoint(pygame.mouse.get_pos())
-        color = (39, 80, 111) if hovered and enabled else s.PANEL
+        color = s.PANEL_ALT if hovered and enabled else s.PANEL
+        shadow = rect.move(0, 3)
+        pygame.draw.rect(self.screen, s.PANEL_DARK, shadow, border_radius=8)
         pygame.draw.rect(self.screen, color, rect, border_radius=8)
-        pygame.draw.rect(self.screen, s.BLUE if enabled else (61, 72, 87), rect, 1, border_radius=8)
-        self.text(label, rect.x + 14, rect.y + 12, rect.width - 28,
-                  s.TEXT if enabled else s.MUTED)
+        pygame.draw.rect(self.screen, s.CYAN if hovered and enabled else
+                         (s.BLUE if enabled else s.EDGE), rect, 1, border_radius=8)
+        label_surface = self.small.render(label, True, s.TEXT if enabled else s.MUTED)
+        self.screen.blit(label_surface, label_surface.get_rect(center=rect.center))
         if enabled:
             self.buttons.append((rect, action))
 
     def set_scene(self, scene):
+        if scene != "dossier":
+            self.sheet_return = False
+            self.relation_return = False
+        self.drag_key = None
+        self.link_start = None
         self.scene = scene
 
-    def show_dialogue(self, title, body):
+    def show_dialogue(self, title, body, item_id=None):
         self.active_person = None
+        self.active_item = item_id
         self.dialogue_title, self.dialogue_body = title, body
         self.scene = "dialogue"
 
@@ -93,7 +117,7 @@ class Game(AbilityScenes):
     def interact(self):
         target = self.nearest()
         if not target:
-            self.message = "Aproxime-se de uma pessoa (círculo) ou objeto (quadrado)."
+            self.message = "Aproxime-se de um personagem ou objeto com marcação dourada."
             return
         kind, item = target
         if kind == "person":
@@ -105,24 +129,19 @@ class Game(AbilityScenes):
             self.abilities.inspected.add(item["id"])
             reason = self.abilities.lock_reason(item["id"])
             if reason:
-                self.show_dialogue(item["object"], reason)
+                self.show_dialogue(item["object"], reason, item["id"])
                 return
             new = self.inventory.collect(item["id"])
             self.show_dialogue(item["title"], item["text"] +
-                               ("\n\nEvidência adicionada ao inventário." if new else "\n\nEvidência já coletada."))
+                               ("\n\nEvidência adicionada ao inventário." if new else "\n\nEvidência já coletada."), item["id"])
         else:
             self.abilities.inspected.add("computer")
-            self.show_dialogue(item["object"], item["text"])
-
-    def answer(self, index):
-        if self.feedback:
-            return
-        self.correct, explanation = validate(PUZZLES[self.puzzle_index], index)
-        self.feedback = ("Resposta válida. " if self.correct else "Revise seu raciocínio. ") + explanation
+            self.show_dialogue(item["object"], item["text"], "computer")
 
     def next_puzzle(self):
         if self.correct:
             self.puzzle_index += 1
+            self.reset_sheet()
         self.feedback = ""
         self.correct = False
         if self.puzzle_index == len(PUZZLES):
@@ -142,6 +161,10 @@ class Game(AbilityScenes):
             self.scene = "victory" if self.accusation == [0, 0, 2, 3] else "error"
 
     def handle_event(self, event):
+        if event.type == pygame.MOUSEBUTTONUP or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE):
+            self.drag_key = None
+        if self.scene == "board" and self.board_event(event):
+            return
         if event.type == pygame.QUIT:
             self.running = False
         elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
@@ -156,12 +179,18 @@ class Game(AbilityScenes):
                     self.scene = "pause"
                 elif self.scene in ("dialogue", "inventory", "map", "board", "pause", "ability", "ability_records"):
                     self.scene = "world"
-                elif self.scene in ("puzzle", "conclusion", "error"):
+                elif self.scene == "dossier" and self.relation_return:
+                    self.relation_return = False
+                    self.scene = "relation"
+                elif self.scene == "dossier" and self.sheet_return:
+                    self.sheet_return = False
+                    self.scene = "puzzle"
+                elif self.scene in ("puzzle", "conclusion", "error", "dossier", "timeline", "relation"):
                     self.scene = "board"
                 elif self.scene == "instructions":
                     self.scene = "menu"
                 elif self.scene == "intro":
-                    self.scene = "world"
+                    self.scene = "board"
             elif self.scene == "world":
                 if key == pygame.K_e:
                     self.interact()
@@ -178,41 +207,57 @@ class Game(AbilityScenes):
                 elif key in (pygame.K_e, pygame.K_RETURN, pygame.K_SPACE):
                     self.scene = "world"
             elif self.scene == "intro" and key == pygame.K_RETURN:
-                self.scene = "world"
+                self.scene = "board"
             elif self.scene == "puzzle":
-                if self.feedback and key == pygame.K_RETURN:
-                    self.next_puzzle()
-                elif pygame.K_1 <= key <= pygame.K_3:
-                    index = key - pygame.K_1
-                    if index < len(PUZZLES[self.puzzle_index]["options"]):
-                        self.answer(index)
+                self.sheet_keyboard(key)
 
     def draw_world(self):
         self.screen.fill(s.BG)
-        pygame.draw.rect(self.screen, s.RED, (16, 24, 4, 22))
+        pygame.draw.rect(self.screen, s.PANEL_DARK, (0, 0, 1200, 76))
+        pygame.draw.line(self.screen, s.EDGE, (0, 76), (1200, 76), 1)
+        pygame.draw.rect(self.screen, s.RED, (25, 22, 5, 31), border_radius=2)
         self.bank.draw(self.screen, self.small)
+        target = self.nearest()
         for person in CHARACTERS:
             color = s.GREEN if person["name"] in self.talked else s.BLUE
-            pygame.draw.circle(self.screen, color, person["pos"], 13)
-            self.text(person["name"], person["pos"][0] - 42, person["pos"][1] + 19, 145, small=True)
+            active = target and target[0] == "person" and target[1] is person
+            self.character_art.draw_marker(self.screen, person["name"], person["pos"], color, active)
+            if active:
+                self.draw_target_label(person["name"], person["pos"], color)
         for item in EVIDENCE + [COMPUTER]:
             if not self.abilities.visible(item.get("id")):
                 continue
-            collected = self.inventory.contains(item.get("id"))
-            color = s.GREEN if collected else (238, 181, 99)
-            x, y = item["pos"]
-            pygame.draw.rect(self.screen, color, (x - 10, y - 10, 20, 20), border_radius=3)
-            if collected:
-                pygame.draw.line(self.screen, s.BG, (x - 5, y), (x + 5, y), 2)
+            item_id = item.get("id", "computer")
+            collected = ("computer" in self.abilities.inspected if item_id == "computer"
+                         else self.inventory.contains(item_id))
+            active = target and target[0] in ("evidence", "computer") and target[1] is item
+            self.item_art.draw_marker(self.screen, item_id, item["pos"], collected, active)
+            if active:
+                self.draw_target_label(item.get("object", "Registro"), item["pos"], s.GREEN if collected else s.GOLD)
         self.player.draw(self.screen)
-        self.text("PROTOCOLO ZERO", 30, 20, color=s.BLUE)
-        self.text(f"FASE 2 / INVESTIGAÇÃO     Evidências: {len(self.inventory.ids)}/8     Depoimentos: {len(self.talked)}/7",
-                  430, 23, 740, small=True)
-        target = self.nearest()
+        self.text("PROTOCOLO ZERO", 46, 19, 300, color=s.CYAN)
+        self.text("FASE 2 / INVESTIGAÇÃO", 430, 19, 250, s.TEXT, small=True)
+        progress = pygame.Rect(700, 18, 465, 38)
+        pygame.draw.rect(self.screen, s.PANEL, progress, border_radius=7)
+        pygame.draw.rect(self.screen, s.EDGE, progress, 1, border_radius=7)
+        self.text(f"EVIDÊNCIAS  {len(self.inventory.ids)}/8", 718, 28, 150, s.GOLD, small=True)
+        self.text(f"DEPOIMENTOS  {len(self.talked)}/7", 915, 28, 170, s.GREEN, small=True)
         prompt = "E • " + target[1].get("name", target[1].get("object", "")) if target else self.message
-        self.text(prompt, 30, 688, 1130, s.GREEN if target else s.TEXT)
-        self.text("WASD / setas: mover     E: interagir     I / Tab: evidências     M: mapa     J: painel     Esc: pausa",
-                  30, 752, 1140, s.MUTED, small=True)
+        pygame.draw.rect(self.screen, s.PANEL_DARK, (20, 678, 1160, 95), border_radius=10)
+        pygame.draw.rect(self.screen, s.EDGE, (20, 678, 1160, 95), 1, border_radius=10)
+        prompt_color = s.GREEN if target else s.TEXT
+        self.text(prompt, 42, 694, 1115, prompt_color)
+        self.text("WASD / setas  mover     E  interagir     I / Tab  evidências     M  mapa     J  mural     Esc  pausa",
+                  42, 743, 1115, s.MUTED, small=True)
+
+    def draw_target_label(self, label, position, color):
+        text = self.small.render(label, True, s.TEXT)
+        rect = text.get_rect(midbottom=(position[0], position[1] - 25))
+        rect.inflate_ip(14, 8)
+        rect.x = max(28, min(rect.x, self.screen.get_width() - rect.width - 28))
+        pygame.draw.rect(self.screen, s.PANEL_DARK, rect, border_radius=5)
+        pygame.draw.rect(self.screen, color, rect, 1, border_radius=5)
+        self.screen.blit(text, text.get_rect(center=rect.center))
 
     def draw_inventory(self):
         self.title("Inventário de evidências", "Selecione uma pista para reler o laudo. Esc: voltar ao banco.")
@@ -223,36 +268,10 @@ class Game(AbilityScenes):
         if found:
             item = found[min(self.selection, len(found) - 1)]
             self.text(item["title"], 480, 145, 650, s.BLUE)
-            self.text(item["text"], 480, 205, 640)
+            end_y = self.text(item["text"], 480, 205, 640)
+            self.item_art.draw(self.screen, item["id"], (690, end_y + 15, 180, 180))
         else:
-            self.text("Nenhuma evidência coletada. Procure os quadrados dourados nas salas.", y=150)
-        self.button("Voltar ao banco", (880, 710, 260, 56), lambda: self.set_scene("world"))
-
-    def draw_board(self):
-        self.title("Painel de investigação", "FASE 3 / ANÁLISE → FASE 4 / LÓGICA → FASE 5 / CONCLUSÃO")
-        self.button(f"Habilidades: {len(self.abilities.used)}/7 • consultar registros", (60, 640, 600, 56),
-                    lambda: self.set_scene("ability_records"))
-        count = len(self.inventory.ids)
-        self.text(f"Evidências reunidas: {count}/8  •  Desafios resolvidos: {self.puzzle_index}/{len(PUZZLES)}", y=130, color=s.BLUE)
-        notes = [
-            "Equipamentos / confronte pendrive, notebook e transmissor com suas análises técnicas.",
-            "Cronologia / separe o horário do evento do horário de identificação do acesso indevido.",
-            "Causalidade / só aceite o vínculo entre evento e credenciais sustentado pelo laudo.",
-            "Pessoas / depoimentos e fichas ajudam a contextualizar; perfil pessoal não prova culpa.",
-        ]
-        y = 205
-        for note in notes:
-            y = self.text(note, y=y) + 22
-        if count < 8:
-            self.text("Explore o banco para desbloquear a análise. Pistas faltantes:", y=480, color=s.MUTED)
-            self.text(", ".join(item["title"] for item in EVIDENCE if not self.inventory.contains(item["id"])), y=525, small=True)
-        elif not self.analysis_done:
-            self.button("Organizar laudos e iniciar dedução", (60, 560, 510, 60), self.begin_analysis)
-        elif self.puzzle_index < len(PUZZLES):
-            self.button("Continuar desafios de lógica", (60, 560, 510, 60), lambda: self.set_scene("puzzle"))
-        else:
-            self.text("Análise lógica concluída. Formule a reconstrução do incidente.", y=490, color=s.GREEN)
-            self.button("Apresentar conclusão", (60, 560, 510, 60), lambda: self.set_scene("conclusion"))
+            self.text("Nenhuma evidência coletada. Procure objetos e registros com marcação dourada nas salas.", y=150)
         self.button("Voltar ao banco", (880, 710, 260, 56), lambda: self.set_scene("world"))
 
     def begin_analysis(self):
@@ -260,66 +279,114 @@ class Game(AbilityScenes):
             self.analysis_done = True
             self.scene = "puzzle"
 
-    def draw_puzzle(self):
-        puzzle = PUZZLES[self.puzzle_index]
-        self.title(puzzle["title"], "FASE 4 / DEDUÇÃO   •   Escolha com o mouse ou teclas 1–3. Esc: painel.")
-        self.text(puzzle["context"], y=135)
-        for index, (label, _) in enumerate(puzzle["options"]):
-            self.button(f"{index + 1}. {label}", (60, 300 + index * 65, 1080, 55),
-                        lambda i=index: self.answer(i), enabled=not self.feedback)
-        if self.feedback:
-            self.text(self.feedback, y=515, color=s.GREEN if self.correct else s.RED)
-            self.button("Continuar [Enter]" if self.correct else "Tentar novamente [Enter]",
-                        (60, 710, 450, 56), self.next_puzzle)
+    def draw_map(self):
+        """Exibe a planta visual do banco sem confundir localização com álibi."""
+        self.screen.fill(s.BG)
+        pygame.draw.rect(self.screen, s.PANEL, (0, 0, 1200, 92))
+        pygame.draw.rect(self.screen, s.RED, (30, 29, 5, 35))
+        self.text("MAPA OPERACIONAL", 52, 25, 430, s.TEXT)
+        self.text("PROTOCOLO ZERO / PLANTA DE INVESTIGAÇÃO", 52, 61, 500, s.MUTED, small=True)
+        self.button("Voltar ao banco", (990, 25, 170, 42), lambda: self.set_scene("world"))
 
-    def draw_conclusion(self):
-        self.title("Reconstrução do incidente", "FASE 5 / CONCLUSÃO   •   Clique nas opções para alternar. Esc: painel.")
-        self.text("Identifique quem desencadeou o incidente, o método, o equipamento e o horário do evento.", y=140)
-        labels = ["Pessoa envolvida", "Método", "Equipamento", "Horário do evento"]
-        for row, options in enumerate(self.final_options()):
-            self.text(labels[row], 60, 235 + row * 95, 280, s.MUTED)
-            self.button(options[self.accusation[row]] + "   ›", (360, 220 + row * 95, 780, 65),
-                        lambda r=row: self.change_choice(r))
-        self.button("Validar reconstrução", (60, 680, 460, 60), self.submit)
+        corridor = pygame.Rect(28, 354, 1144, 44)
+        pygame.draw.rect(self.screen, (18, 47, 62), corridor, border_radius=8)
+        pygame.draw.line(self.screen, (63, 193, 216), corridor.midleft, corridor.midright, 2)
+        self.text("CORREDOR CENTRAL", 475, 365, 250, CYAN, small=True)
+
+        current_room = None
+        for index, room in enumerate(self.bank.rooms):
+            if self.player.rect.colliderect(room):
+                current_room = index
+
+        for index, name in enumerate(ROOM_NAMES):
+            column, row = index % 3, index // 3
+            card = pygame.Rect(30 + column * 390, 112 + row * 285, 370, 252)
+            current = index == current_room
+            fill = (24, 47, 61) if current else (19, 29, 43)
+            border = s.GREEN if current else (55, 76, 96)
+            pygame.draw.rect(self.screen, fill, card, border_radius=8)
+            pygame.draw.rect(self.screen, border, card, 2, border_radius=8)
+
+            title = self.small.render(name, True, s.GREEN if current else s.TEXT)
+            pygame.draw.rect(self.screen, (10, 18, 29),
+                             (card.x + 12, card.y + 12, title.get_width() + 18, 27),
+                             border_radius=4)
+            self.screen.blit(title, (card.x + 20, card.y + 17))
+            if current:
+                self.ui_label("VOCÊ ESTÁ AQUI", card.right - 126, card.y + 18, s.GREEN, 112)
+
+            art_rect = pygame.Rect(card.x + 15, card.y + 51, 190, 158)
+            pygame.draw.rect(self.screen, (11, 17, 27), art_rect, border_radius=5)
+            self.bank.art.draw(self.screen, index, art_rect)
+
+            people = [person["name"] for person in CHARACTERS if person["room"] == index]
+            room_evidence = []
+            for item in EVIDENCE:
+                item_room = min(range(len(self.bank.rooms)),
+                                key=lambda room_index: pygame.Vector2(self.bank.rooms[room_index].center)
+                                .distance_to(item["pos"]))
+                if item_room == index and self.abilities.visible(item["id"]):
+                    room_evidence.append(item)
+            if index == min(range(len(self.bank.rooms)),
+                            key=lambda room_index: pygame.Vector2(self.bank.rooms[room_index].center)
+                            .distance_to(COMPUTER["pos"])):
+                if self.abilities.visible("computer"):
+                    room_evidence.append(COMPUTER)
+
+            self.ui_label("PESSOAS", card.x + 220, card.y + 59, CYAN, 135)
+            self.ui_label(", ".join(people) or "Nenhuma registrada", card.x + 220, card.y + 83, s.TEXT, 135)
+            self.ui_label("REGISTROS", card.x + 220, card.y + 137, CYAN, 135)
+            found = sum(1 for item in room_evidence
+                        if item.get("id", "computer") in self.inventory.ids
+                        or item.get("id", "computer") == "computer"
+                        and "computer" in self.abilities.inspected)
+            self.ui_label(f"{found}/{len(room_evidence)} consultados", card.x + 220, card.y + 161, s.GREEN if found else s.MUTED, 135)
+            self.ui_label("Porta para o corredor " + ("abaixo" if index < 3 else "acima"),
+                          card.x + 220, card.y + 202, s.MUTED, 135)
+
+        self.ui_label("Legenda:", 36, 688, s.MUTED, 70)
+        pygame.draw.rect(self.screen, s.GREEN, (112, 693, 12, 12), border_radius=3)
+        self.ui_label("sala atual", 132, 687, s.TEXT, 100)
+        pygame.draw.rect(self.screen, CYAN, (246, 693, 12, 12), border_radius=3)
+        self.ui_label("sala e registros disponíveis", 266, 687, s.TEXT, 260)
+        self.ui_label("A posição no mapa orienta a exploração; os horários e álibis devem ser verificados nos registros.",
+                      36, 716, s.MUTED, 820)
 
     def draw(self):
         self.buttons = []
         if self.scene == "world":
             self.draw_world()
         elif self.scene == "menu":
-            self.title("PROTOCOLO ZERO", "O MISTÉRIO DA INVASÃO BANCÁRIA")
-            self.text("Uma invasão. Oito evidências. Uma conclusão que precisa de prova.", y=180, color=s.BLUE)
-            self.text("Investigue o banco e use lógica matemática para reconstruir o incidente.", y=230)
-            self.button("Começar nova investigação", (60, 340, 480, 60), self.start)
-            self.button("Instruções", (60, 420, 480, 60), lambda: self.set_scene("instructions"))
-            self.button("Sair", (60, 500, 480, 60), lambda: setattr(self, "running", False))
-            if self.has_game:
-                self.button("Retomar investigação", (60, 580, 480, 60), lambda: self.set_scene("world"))
-            self.button("Carregar partida salva", (620, 340, 520, 60), self.load_game)
-            self.text(self.save_message, 620, 430, 520, s.MUTED)
-            self.text("Resolução de Problemas com Lógica Matemática • protótipo local", y=735, small=True, color=s.MUTED)
+            self.draw_case_menu()
         elif self.scene == "instructions":
             self.title("Como investigar")
             self.text("WASD ou setas: mover. E: interagir quando estiver perto.\n"
-                      "Círculos azuis: personagens. Quadrados dourados: objetos. Verde: já consultado.\n"
+                      "Retratos azuis: personagens. Ícones e quadrados dourados: objetos e registros. Verde: já consultado.\n"
                       "I ou Tab: inventário. M: mapa. J: painel de investigação. Esc: voltar ou pausar.\n\n"
-                      "Entre nas salas pelas portas voltadas ao corredor central. Reúna oito pistas e consulte os depoimentos. "
-                      "No painel, organize os laudos e resolva os oito desafios. A conclusão exige todos os desafios corretos.\n\n"
-                      "Nos desafios, use 1–3 ou clique. Leia a explicação e pressione Enter. Erros permitem nova tentativa.\n"
+                      "No mural, arraste fichas e use Ligar fichas para conectar duas hipóteses. Use o catálogo lateral para consultar pessoas, itens, locais e pistas.\n"
+                      "Clique em Explorar banco para entrar nas salas pelas portas do corredor. Reúna oito pistas e volte com J para resolver os desafios.\n\n"
+                      "Na mesa de dedução, clique numa lacuna e escolha uma opção (1–4). Tab muda de campo; Enter verifica e continua após o resultado.\n"
                       "Símbolos: ¬ não; ∧ e; ∨ ou inclusivo; → se... então; ↔ se e somente se.\n\n"
                       "Nos diálogos, use H ou o botão para consultar a habilidade. Examine os objetos solicitados antes de ativá-la.\n"
-                      "Para salvar, pressione Esc no banco e escolha Salvar progresso. Carregue pelo menu ou pela pausa.", y=140)
+                      "Salve pelo botão Salvar no mural ou pela pausa no banco. Carregue pelo menu ou pela pausa.", y=140)
             self.button("Voltar ao menu", (60, 710, 300, 56), lambda: self.set_scene("menu"))
         elif self.scene == "intro":
             self.title("Fase 1 / O incidente")
             self.text(INTRO, y=180)
-            self.button("Entrar no banco [Enter]", (60, 550, 440, 60), lambda: self.set_scene("world"))
+            self.button("Abrir investigação [Enter]", (60, 550, 440, 60), lambda: self.set_scene("board"))
         elif self.scene == "dialogue":
             self.title(self.dialogue_title)
-            self.text(self.dialogue_body, y=150)
+            portrait = self.active_person and self.character_art.draw(
+                self.screen, self.active_person, (60, 140, 280, 420))
+            if not portrait and self.active_item:
+                portrait = self.item_art.draw(self.screen, self.active_item, (60, 170, 280, 280))
+            text_x = 380 if portrait else 60
+            text_width = 760 if portrait else 1080
+            self.text(self.dialogue_body, x=text_x, y=150, width=text_width)
             if self.active_person:
                 ability = ABILITIES[self.active_person]
-                self.text(ability["name"] + " — " + ability["description"], y=520, color=s.BLUE)
+                self.text(ability["name"] + " — " + ability["description"],
+                          x=text_x, y=520, width=text_width, color=s.BLUE)
                 self.button("Consultar habilidade [H]", (60, 625, 500, 56), self.open_ability)
             self.button("Continuar [E / Enter]", (60, 710, 430, 56), lambda: self.set_scene("world"))
         elif self.scene == "ability":
@@ -330,22 +397,18 @@ class Game(AbilityScenes):
             self.draw_inventory()
         elif self.scene == "board":
             self.draw_board()
+        elif self.scene == "relation":
+            self.draw_relation()
+        elif self.scene == "dossier":
+            self.draw_dossier()
+        elif self.scene == "timeline":
+            self.draw_timeline()
         elif self.scene == "puzzle":
             self.draw_puzzle()
         elif self.scene == "conclusion":
-            self.draw_conclusion()
+            self.draw_case_conclusion()
         elif self.scene == "map":
-            self.title("Mapa do banco", "As portas de todas as salas ficam voltadas ao corredor central. Esc: voltar.")
-            for index, name in enumerate(ROOM_NAMES):
-                x, y = 60 + index % 3 * 365, 150 + index // 3 * 270
-                pygame.draw.rect(self.screen, s.PANEL, (x, y, 340, 210), border_radius=8)
-                self.text(name, x + 20, y + 20, 300, s.BLUE)
-                people = ", ".join(person["name"] for person in CHARACTERS if person["room"] == index)
-                self.text(people, x + 20, y + 75, 300, small=True)
-                self.text("Porta ↓" if index < 3 else "Porta ↑", x + 20, y + 155, 300, s.MUTED)
-            self.text("CORREDOR CENTRAL / posição inicial do investigador", 300, 375, 800, s.GREEN, small=True)
-            self.text("Posições para interação neste protótipo; não representam uma grade de álibis.", y=705, small=True, color=s.MUTED)
-            self.button("Voltar", (930, 735, 210, 50), lambda: self.set_scene("world"))
+            self.draw_map()
         elif self.scene == "pause":
             self.title("Investigação pausada")
             self.button("Continuar", (60, 200, 450, 60), lambda: self.set_scene("world"))

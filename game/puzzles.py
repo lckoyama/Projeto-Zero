@@ -14,7 +14,7 @@ PUZZLES = [
      "options": [("Verdadeiro", True), ("Falso", False)],
      "explanation": "W ∧ H é V; V ∨ F é V. A conjunção exige ambos; a disjunção exige ao menos um."},
     {"title": "03 / Tabela-verdade da condicional", "kind": "table",
-     "context": "Calcule P → Q nas quatro linhas, nesta ordem: (P,Q) = (V,V), (V,F), (F,V), (F,F). Escolha a coluna de resultados. A condicional material não prova, sozinha, causalidade.",
+     "context": "Calcule P → Q nas quatro linhas, nesta ordem: (P,Q) = (V,V), (V,F), (F,V), (F,F). Preencha o resultado de cada linha. A condicional material não prova, sozinha, causalidade.",
      "expression": ("implies", "P", "Q"),
      "options": [("V, F, V, V", [True, False, True, True]),
                  ("V, V, F, F", [True, True, False, False]),

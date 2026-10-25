@@ -5,6 +5,7 @@ from pathlib import Path
 from game.abilities import ABILITIES
 from game.evidence import EVIDENCE
 from game.puzzles import PUZZLES
+from game.board import BoardState
 
 SAVE_PATH = Path(__file__).resolve().parent.parent / "saves" / "progress.json"
 
@@ -18,6 +19,7 @@ def save_progress(game, path=SAVE_PATH):
         "used": sorted(game.abilities.used), "records": game.abilities.records,
         "analysis_done": game.analysis_done, "puzzle_index": game.puzzle_index,
         "position": list(game.player.rect.topleft), "accusation": game.accusation,
+        "board": game.board.export(),
     }
     temporary = path.with_suffix(".tmp")
     try:
@@ -78,14 +80,17 @@ def load_progress(game, path=SAVE_PATH):
             type(n) is not int or not 0 <= n < len(options)
             for n, options in zip(accusation, game.final_options())):
         raise ValueError("Seleção de conclusão inválida.")
+    board = BoardState.restore(data.get("board"), evidence)
     # Só modifica o jogo depois de validar todos os campos.
     game.reset()
     game.inventory.ids, game.talked = evidence, talked
     game.abilities.inspected, game.abilities.used = inspected, used
     game.abilities.records = records
     game.analysis_done, game.puzzle_index = analysis, index
+    game.reset_sheet()
     game.player.rect.topleft = position
     game.player.position.update(position)
     game.accusation = accusation
+    game.board = board
     game.has_game = True
     game.scene = "world"
