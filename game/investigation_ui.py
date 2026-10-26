@@ -25,6 +25,8 @@ class InvestigationUI:
         self.link_start = None
         self.drag_key = None
         self.drag_offset = (0, 0)
+        self.board_panning = False
+        self.board_pan_last = pygame.Vector2()
         self.board_message = "Arraste as fichas para organizar sua investigação."
 
     def ui_label(self, text, x, y, color=s.TEXT, width=220):
@@ -115,6 +117,8 @@ class InvestigationUI:
 
     def pin_selected(self):
         added = self.board.pin(self.board_selected)
+        if added:
+            self.locate_board_selection()
         self.board_message = "Ficha fixada. Você pode arrastá-la no mural." if added else "Essa ficha já está no mural."
 
     def remove_selected(self):
@@ -124,6 +128,8 @@ class InvestigationUI:
 
     def board_event(self, event):
         """Arrastar e ligar fichas só altera hipóteses, nunca as evidências."""
+        if self.board_navigation_event(event):
+            return True
         if event.type == pygame.MOUSEWHEEL:
             if pygame.mouse.get_pos()[0] < CANVAS[0]:
                 self.page_catalog(-event.y)
@@ -131,12 +137,20 @@ class InvestigationUI:
         if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
             self.drag_key = None
         if event.type == pygame.MOUSEMOTION and self.drag_key:
-            self.board.move(self.drag_key, (event.pos[0] - self.drag_offset[0], event.pos[1] - self.drag_offset[1]))
+            point = self.screen_to_board(event.pos) - self.drag_offset
+            self.board.move(self.drag_key, point)
             return True
         if event.type == pygame.MOUSEBUTTONDOWN and event.button in (1, 3):
-            for key in reversed(self.board.positions):
+            if not pygame.Rect(CANVAS).collidepoint(event.pos):
+                return False
+            if event.button == 1 and not self.link_mode:
+                for pair, _, _, rect, _ in reversed(self.link_labels()):
+                    if rect.collidepoint(event.pos):
+                        self.open_relation(*pair)
+                        return True
+            for key in reversed(self.visible_board_keys()):
                 position = self.board.positions[key]
-                if pygame.Rect(position, CARD_SIZE).collidepoint(event.pos):
+                if self.board_card_rect(key).collidepoint(event.pos):
                     self.board_selected = key
                     if event.button == 3:
                         self.remove_selected()
@@ -151,27 +165,48 @@ class InvestigationUI:
                         self.board.positions.pop(key)
                         self.board.positions[key] = position
                         self.drag_key = key
-                        self.drag_offset = (event.pos[0] - position[0], event.pos[1] - position[1])
+                        self.drag_offset = self.screen_to_board(event.pos) - position
                     return True
             if event.button == 1 and pygame.Rect(CANVAS).collidepoint(event.pos):
                 point = pygame.Vector2(event.pos)
-                for pair in sorted(self.board.links):
-                    first, second = (pygame.Vector2(self.board.positions[key]) + (59, 3) for key in pair)
+                for pair in self.visible_board_links():
+                    first, second = (self.board_to_screen(pygame.Vector2(self.board.positions[key]) + (59, 3)) for key in pair)
                     vector = second - first
                     if vector.length_squared():
                         ratio = max(0, min(1, (point - first).dot(vector) / vector.length_squared()))
                         if point.distance_to(first + vector * ratio) <= 6:
                             self.open_relation(*pair)
                             return True
+                if not self.link_mode:
+                    self.start_board_pan(event.pos)
+                    return True
         return False
 
     def draw_board_card(self, key, position):
+        target = self.screen
+        card = pygame.Surface((CARD_SIZE[0] + 16, CARD_SIZE[1] + 16), pygame.SRCALPHA)
+        try:
+            self.screen = card
+            self.draw_board_card_content(key, (6, 6))
+        finally:
+            self.screen = target
+        size = (round(card.get_width() * self.board.zoom), round(card.get_height() * self.board.zoom))
+        rendered = pygame.transform.smoothscale(card, size) if self.board.zoom != 1 else card
+        point = self.board_to_screen(position) - pygame.Vector2(6, 6) * self.board.zoom
+        self.screen.blit(rendered, point)
+
+    def draw_board_card_content(self, key, position):
         rect = pygame.Rect(position, CARD_SIZE)
         pygame.draw.rect(self.screen, (3, 6, 10), rect.move(5, 7), border_radius=2)
         pygame.draw.rect(self.screen, PAPER, rect)
         image_rect = pygame.Rect(rect.x + 5, rect.y + 6, rect.width - 10, 105)
         pygame.draw.rect(self.screen, (15, 22, 31), image_rect)
         self.entry_art(key, image_rect)
+        note = self.board.notes.get(key)
+        if note:
+            label = {"none": "Nota pessoal", "investigate": "Investigar", "suspect": "Suspeita", "discarded": "Descartada*"}[note["mark"]]
+            pygame.draw.rect(self.screen, (42, 35, 24), (rect.x + 5, rect.y + 87, rect.width - 10, 23))
+            self.ui_label(label, rect.x + 8, rect.y + 89, (240, 203, 124), rect.width - 14)
         title, category, _, known = self.entry(key)
         lines = wrap_text(title, self.small, rect.width - 12)
         for index, line in enumerate(lines[:2]):
@@ -208,7 +243,8 @@ class InvestigationUI:
         if len(keys) > 6:
             self.ui_button("Anterior", (16, 655, 89, 30), lambda: self.page_catalog(-1))
             self.ui_button("Próxima", (112, 655, 90, 30), lambda: self.page_catalog(1))
-        self.ui_button("Registros / habilidades", (16, 705, 186, 34), lambda: self.set_scene("ability_records"))
+        self.ui_button("Comparar depoimentos", (16, 693, 186, 30), self.open_comparison)
+        self.ui_button("Registros / habilidades", (16, 726, 186, 25), lambda: self.set_scene("ability_records"))
         self.ui_button("Linha do tempo", (16, 753, 186, 30), lambda: self.set_scene("timeline"))
         # Mural central.
         pygame.draw.rect(self.screen, (12, 18, 23), CANVAS)
@@ -217,17 +253,25 @@ class InvestigationUI:
                 self.screen.set_at((x, y), (25, 33, 39))
         self.ui_label("MURAL DE HIPÓTESES", 238, 89, width=210)
         self.ui_button("Ligar fichas", (453, 84, 125, 32), self.toggle_links, active=self.link_mode)
-        self.ui_button("Organizar", (588, 84, 112, 32), self.board.arrange)
+        self.ui_button("Organizar", (588, 84, 112, 32), self.arrange_board)
         self.ui_button("Limpar ligações", (710, 84, 145, 32), self.board.clear_links)
-        for first, second in sorted(self.board.links):
-            a, b = self.board.positions[first], self.board.positions[second]
+        old_clip = self.screen.get_clip()
+        self.screen.set_clip(CANVAS)
+        for first, second in self.visible_board_links():
+            a, b = (self.board_to_screen(pygame.Vector2(self.board.positions[key]) + (59, 3)) for key in (first, second))
             status, _ = self.relation_status((first, second))
             color = {"pending": s.MUTED, "verified": s.GREEN, "rejected": s.RED}[status]
-            pygame.draw.line(self.screen, color, (a[0] + 59, a[1] + 3), (b[0] + 59, b[1] + 3), 2)
-        for key, position in self.board.positions.items():
-            self.draw_board_card(key, position)
-        self.ui_label(self.board_message, 238, 707, CYAN, 720)
-        self.ui_label("Cinza: pendente / Verde: verificada / Vermelho: não comprovada.\nClique na linha ou ligue as mesmas fichas para revisar.", 238, 743, s.MUTED, 720)
+            pygame.draw.line(self.screen, color, a, b, 2)
+        for key in self.visible_board_keys():
+            if self.board_card_rect(key).inflate(16, 16).colliderect(CANVAS):
+                self.draw_board_card(key, self.board.positions[key])
+        self.draw_link_labels()
+        if not self.visible_board_keys():
+            self.ui_label("Nenhuma ficha neste filtro. Clique em Filtro para trocar.", 300, 400, s.MUTED, 600)
+        self.screen.set_clip(old_clip)
+        self.draw_navigation()
+        self.ui_label(self.board_message, 238, 739, CYAN, 720)
+        self.ui_label("Roda: zoom • Arraste o fundo ou use o botão do meio para mover o mural.", 238, 779, s.MUTED, 720)
         # Inspeção e progressão, à direita.
         pygame.draw.rect(self.screen, (13, 20, 33), (982, 67, 218, 733))
         pygame.draw.line(self.screen, EDGE, (982, 67), (982, 800))
@@ -239,8 +283,7 @@ class InvestigationUI:
         self.ui_label("Registro disponível" if known else "A investigar", 998, 367, s.GREEN if known else s.MUTED, 185)
         self.ui_button("Abrir ficha", (998, 409, 184, 35), lambda: self.set_scene("dossier"))
         self.ui_button("Fixar no mural", (998, 453, 184, 35), self.pin_selected)
-        self.ui_button("Retirar do mural", (998, 497, 184, 35), self.remove_selected,
-                       enabled=self.board_selected in self.board.positions)
+        self.ui_button("Montar hipótese", (998, 497, 184, 35), self.open_theory)
         self.ui_label(f"EVIDÊNCIAS  {len(self.inventory.ids):02}/08", 998, 566, CYAN, 185)
         self.ui_label(f"DEDUÇÕES    {self.puzzle_index:02}/08", 998, 594, s.MUTED, 185)
         count = len(self.inventory.ids)
@@ -257,8 +300,9 @@ class InvestigationUI:
             else:
                 self.begin_analysis()
         self.ui_button(label, (998, 665, 184, 42), progress, enabled=ready, active=ready)
+        self.ui_button("Anotações pessoais", (998, 713, 184, 32), self.open_notes)
         if self.save_message:
-            self.ui_label(self.save_message, 998, 725, s.MUTED, 185)
+            self.ui_label(self.save_message, 998, 750, s.MUTED, 185)
 
     def draw_dossier(self):
         title, category, body, _ = self.entry(self.board_selected)

@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pygame
 
-from game.board import BoardState, CANVAS, CARD_SIZE
+from game.board import BoardState, CANVAS, BOARD_SPACE, CARD_SIZE
 from game.savegame import load_progress, save_progress
 from game.scenes import Game
 
@@ -33,7 +33,7 @@ class BoardTests(unittest.TestCase):
         game.handle_event(pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=(x + 10, y + 10)))
         game.handle_event(pygame.event.Event(pygame.MOUSEMOTION, pos=(-999, 9999)))
         self.assertEqual(game.board.positions["person:0"],
-                         [CANVAS[0] + 8, CANVAS[1] + CANVAS[3] - CARD_SIZE[1] - 8])
+                         [BOARD_SPACE[0] + 8, BOARD_SPACE[1] + BOARD_SPACE[3] - CARD_SIZE[1] - 8])
         game.handle_event(pygame.event.Event(pygame.MOUSEBUTTONUP, button=1, pos=(0, 0)))
         self.assertIsNone(game.drag_key)
         self.assertEqual(game.inventory.ids, set())

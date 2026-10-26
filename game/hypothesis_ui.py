@@ -1,4 +1,6 @@
 """Escolha da relação e montagem da justificativa de uma ligação do mural."""
+import pygame
+from game.board import CANVAS, CARD_SIZE
 from game import settings as s
 from game.deduction import format_expression
 from game.evidence import EVIDENCE
@@ -8,6 +10,44 @@ from game.investigation_ui import CYAN
 
 
 class HypothesisUI:
+    def link_labels(self):
+        labels = []
+        occupied = [self.board_card_rect(key).inflate(6, 6) for key in self.visible_board_keys()]
+        bounds = pygame.Rect(CANVAS).inflate(-8, -8)
+        for pair in self.visible_board_links():
+            review = self.board.reviews.get(pair) or {}
+            verb = {"time": "Confirma horário", "support": "Confirma", "contradiction": "Contradiz", "used": "Usou"}.get(review.get("relation"), "Justificar")
+            status, _ = self.relation_status(pair)
+            suffix = {"pending": "pendente", "rejected": "não comprovada", "verified": "verificada"}[status]
+            label = verb + " · " + suffix
+            width = self.small.size(label)[0] + 20
+            a, b = (self.board_to_screen(pygame.Vector2(self.board.positions[key]) + (59, 3)) for key in pair)
+            center = (a + b) / 2
+            if not bounds.clipline(a, b):
+                continue
+            rect = pygame.Rect(0, 0, width, 28)
+            rect.center = (round(center.x), round(center.y))
+            rect.clamp_ip(bounds)
+            # Procura espaço perto da linha sem cobrir fichas ou outros rótulos.
+            for dy in (0, -32, 32, -64, 64, -96, 96, -128, 128):
+                candidate = rect.move(0, dy)
+                candidate.clamp_ip(bounds)
+                if not any(candidate.colliderect(other) for other in occupied):
+                    rect = candidate
+                    break
+            occupied.append(rect)
+            labels.append((pair, label, status, rect, center))
+        return labels
+
+    def draw_link_labels(self):
+        for pair, label, status, rect, center in self.link_labels():
+            color = {"pending": s.MUTED, "rejected": s.RED, "verified": s.GREEN}[status]
+            if not rect.collidepoint(center):
+                pygame.draw.line(self.screen, color, center, rect.center, 1)
+            pygame.draw.rect(self.screen, (12, 19, 32), rect, border_radius=5)
+            pygame.draw.rect(self.screen, color, rect, 1, border_radius=5)
+            self.screen.blit(self.small.render(label, True, color), (rect.x + 10, rect.y + 4))
+
     def open_relation(self, first, second):
         if first == second:
             self.board_message = "Escolha duas fichas diferentes."

@@ -3,9 +3,9 @@ from game.logic import entails, counterexamples
 from game.deduction import format_expression, rule_applies
 
 RELATIONS = {"time": "Confirma o horário", "contradiction": "Contradiz o depoimento",
-             "support": "Sustenta esta hipótese"}
+             "support": "Confirma a afirmação", "used": "Usou o equipamento"}
 FORMULAS = ["P", ("implies", "P", "Q"), "Q", ("not", "P"),
-            ("not", "Q"), ("implies", "Q", "P")]
+            ("not", "Q"), ("implies", "Q", "P"), ("implies", "P", ("not", "Q"))]
 RULES = {"mp": "Modus Ponens", "mt": "Modus Tollens", "ac": "Afirmação do consequente"}
 
 
@@ -70,13 +70,13 @@ def empty_review(topic=None):
             "premises": [None, None], "conclusion": None, "rule": None, "submitted": False}
 
 
-def validate_review_shape(review):
+def validate_review_shape(review, topics=None):
     """Valida entradas salvas sem confiar em um selo de aprovação no arquivo."""
     if not isinstance(review, dict) or set(review) != set(empty_review()):
         raise ValueError("Estrutura de justificativa inválida.")
     if type(review["submitted"]) is not bool:
         raise ValueError("Estado de verificação inválido.")
-    for name, allowed in [("topic", TOPICS), ("relation", RELATIONS), ("rule", RULES)]:
+    for name, allowed in [("topic", TOPICS if topics is None else topics), ("relation", RELATIONS), ("rule", RULES)]:
         value = review[name]
         if value is not None and (not isinstance(value, str) or value not in allowed):
             raise ValueError("Opção de justificativa desconhecida.")
@@ -93,7 +93,7 @@ def assess_review(pair, review, collected, talked, topics=None):
     """Verifica contexto, fontes, premissas, consequência e regra da relação."""
     if review is None:
         return "pending", "Escolha a relação, a evidência e a justificativa lógica."
-    validate_review_shape(review)
+    validate_review_shape(review, topics)
     if any(review[key] is None for key in ("topic", "relation", "evidence", "conclusion", "rule")) or None in review["premises"]:
         return "pending", "Preencha a relação, a evidência, duas premissas, a conclusão e a regra."
     if not review["submitted"]:
@@ -106,6 +106,8 @@ def assess_review(pair, review, collected, talked, topics=None):
     if review["evidence"] != topic["primary"]:
         return "rejected", "A evidência escolhida não é o laudo que fundamenta esta relação."
     relation = review["relation"]
+    if relation == "used" and (not topic.get("usage_pair") or set(pair) != set(topic["usage_pair"])):
+        return "rejected", "Usou exige uma pessoa, um equipamento e um registro que comprove esse uso. Presença ou descoberta não bastam."
     if relation == "time" and not topic["timed"]:
         return "rejected", "Esta afirmação não confirma um horário. Conexão ou causalidade não equivalem a uma confirmação temporal."
     expected = topic["claim"]

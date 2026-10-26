@@ -17,9 +17,14 @@ from game.board import BoardState
 from game.investigation_ui import CYAN, InvestigationUI
 from game.deduction_ui import DeductionUI
 from game.hypothesis_ui import HypothesisUI
+from game.comparison_ui import ComparisonUI
+from game.theory_ui import TheoryUI
+from game.theory import empty_theory
+from game.board_navigation import BoardNavigation
+from game.notes_ui import NotesUI
 
 
-class Game(HypothesisUI, DeductionUI, InvestigationUI, AbilityScenes):
+class Game(NotesUI, BoardNavigation, TheoryUI, ComparisonUI, HypothesisUI, DeductionUI, InvestigationUI, AbilityScenes):
     def __init__(self):
         pygame.init()
         self.screen = pygame.display.set_mode((s.WIDTH, s.HEIGHT))
@@ -36,6 +41,7 @@ class Game(HypothesisUI, DeductionUI, InvestigationUI, AbilityScenes):
         self.reset()
 
     def reset(self, case_id="link", revision=CASE_REVISION):
+        pygame.key.stop_text_input()
         self.case = build_case(case_id, revision)
         self.case_id = self.case["id"]
         for field in ("characters", "evidence", "computer", "puzzles", "sheets", "topics"):
@@ -64,6 +70,9 @@ class Game(HypothesisUI, DeductionUI, InvestigationUI, AbilityScenes):
         self.correct = False
         self.selection = 0
         self.accusation = [0, 0, 0, 0]
+        self.theory = empty_theory()
+        self.theory_field = 0
+        self.theory_reading = None
         self.message = "Explore o banco. Aproxime-se dos marcadores e pressione E."
 
     def start(self):
@@ -97,6 +106,9 @@ class Game(HypothesisUI, DeductionUI, InvestigationUI, AbilityScenes):
             self.buttons.append((rect, action))
 
     def set_scene(self, scene):
+        if self.scene == "notes" and scene != "notes":
+            pygame.key.stop_text_input()
+        self.board_panning = False
         if scene != "dossier":
             self.sheet_return = False
             self.relation_return = False
@@ -168,6 +180,8 @@ class Game(HypothesisUI, DeductionUI, InvestigationUI, AbilityScenes):
             self.scene = "victory" if self.accusation == self.case["answer"] else "error"
 
     def handle_event(self, event):
+        if self.scene == "notes" and self.notes_event(event):
+            return
         if event.type == pygame.MOUSEBUTTONUP or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE):
             self.drag_key = None
         if self.scene == "board" and self.board_event(event):
@@ -192,7 +206,7 @@ class Game(HypothesisUI, DeductionUI, InvestigationUI, AbilityScenes):
                 elif self.scene == "dossier" and self.sheet_return:
                     self.sheet_return = False
                     self.scene = "puzzle"
-                elif self.scene in ("puzzle", "conclusion", "error", "dossier", "timeline", "relation"):
+                elif self.scene in ("puzzle", "conclusion", "error", "dossier", "timeline", "relation", "comparison", "theory"):
                     self.scene = "board"
                 elif self.scene == "instructions":
                     self.scene = "menu"
@@ -406,6 +420,12 @@ class Game(HypothesisUI, DeductionUI, InvestigationUI, AbilityScenes):
             self.draw_board()
         elif self.scene == "relation":
             self.draw_relation()
+        elif self.scene == "comparison":
+            self.draw_comparison()
+        elif self.scene == "theory":
+            self.draw_theory()
+        elif self.scene == "notes":
+            self.draw_notes()
         elif self.scene == "dossier":
             self.draw_dossier()
         elif self.scene == "timeline":
