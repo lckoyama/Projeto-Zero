@@ -359,21 +359,30 @@ class InvestigationUI:
             self.ui_button(options[self.accusation[row]] + "   >", (385, y + 27, 745, 43),
                            lambda value=row: self.toggle_final_choice(value),
                            active=self.final_choice_open == row)
-            if self.final_choice_open == row:
-                item_height = 32
-                list_height = len(options) * item_height + 8
-                list_y = y + 76
-                if list_y + list_height > 700:
-                    list_y = y + 20 - list_height
-                pygame.draw.rect(self.screen, (9, 16, 27), (385, list_y, 745, list_height), border_radius=5)
-                pygame.draw.rect(self.screen, CYAN, (385, list_y, 745, list_height), 1, border_radius=5)
-                for option, label in enumerate(options):
-                    self.ui_button(label, (393, list_y + 4 + option * item_height, 729, 28),
-                                   lambda value=row, selected=option: self.select_final_choice(value, selected),
-                                   active=option == self.accusation[row])
         self.ui_button("Voltar ao mural", (60, 707, 260, 46), lambda: self.set_scene("board"))
         self.ui_button("Validar reconstrução", (385, 707, 350, 46), self.submit,
                        active=True, enabled=self.analysis_done and self.puzzle_index == len(self.puzzles))
+
+        if self.final_choice_open is not None:
+            row = self.final_choice_open
+            options = self.final_options()[row]
+            y = 265 + row * 93
+            item_height = 32
+            list_height = len(options) * item_height + 8
+            list_y = y + 76
+            if list_y + list_height > 700:
+                list_y = y + 20 - list_height
+            pygame.draw.rect(self.screen, (9, 16, 27), (385, list_y, 745, list_height), border_radius=5)
+            pygame.draw.rect(self.screen, CYAN, (385, list_y, 745, list_height), 1, border_radius=5)
+            base_buttons = self.buttons
+            self.buttons = []
+            for option, label in enumerate(options):
+                self.ui_button(label, (393, list_y + 4 + option * item_height, 729, 28),
+                               lambda value=row, selected=option: self.select_final_choice(value, selected),
+                               active=option == self.accusation[row])
+            self.buttons.append((pygame.Rect(385, list_y, 745, list_height),
+                                 lambda: setattr(self, "final_choice_open", None)))
+            self.buttons.extend(base_buttons)
 
     def draw_case_menu(self):
         self.dossier_header("DOSSIÊ 001 / ACESSO RESTRITO")
