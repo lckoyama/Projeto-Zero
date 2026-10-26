@@ -17,7 +17,7 @@ class HypothesisUI:
         if pair not in self.board.links:
             self.board.connect(*pair)
         self.relation_pair = pair
-        topics = available_topics(pair, self.inventory.ids)
+        topics = available_topics(pair, self.inventory.ids, self.topics)
         if pair not in self.board.reviews:
             self.board.reviews[pair] = empty_review(topics[0] if topics else None)
         elif self.board.reviews[pair]["topic"] is None and topics:
@@ -56,7 +56,7 @@ class HypothesisUI:
         self.set_scene("board")
 
     def relation_status(self, pair):
-        return assess_review(pair, self.board.reviews.get(pair), self.inventory.ids, self.talked)
+        return assess_review(pair, self.board.reviews.get(pair), self.inventory.ids, self.talked, self.topics)
 
     def draw_relation(self):
         pair = self.relation_pair
@@ -67,7 +67,7 @@ class HypothesisUI:
         self.entry_art(pair[1], (1100, 83, 70, 80))
         self.ui_label(self.entry(pair[0])[0] + "  /  " + self.entry(pair[1])[0], 120, 101, CYAN, 950)
         self.ui_label("Escolha uma afirmação e justifique a relação com uma evidência coletada.", 120, 134, s.MUTED, 950)
-        topics = available_topics(pair, self.inventory.ids)
+        topics = available_topics(pair, self.inventory.ids, self.topics)
         if not topics:
             self.text("Ainda não há uma afirmação verificável disponível para estas fichas.", x=45, y=220, width=1100)
             self.text("Colete os laudos pertinentes ou escolha outra ligação. O jogo só oferece verificações "
@@ -78,7 +78,7 @@ class HypothesisUI:
                       x=45, y=410, width=1070, color=s.MUTED)
             self.ui_button("Retirar ligação", (45, 700, 240, 44), self.remove_relation)
             return
-        topic = TOPICS[review["topic"]]
+        topic = self.topics[review["topic"]]
         self.ui_button("Afirmação: " + topic["title"] + "  >", (28, 181, 1144, 42),
                        lambda: self.cycle_relation_field("topic", topics))
         self.ui_label("RELAÇÃO E FONTE", 30, 246, CYAN, 350)
@@ -88,7 +88,7 @@ class HypothesisUI:
         self.ui_button(RELATIONS.get(review["relation"], "Selecionar relação") + "  >", (28, 314, 355, 42),
                        lambda: self.cycle_relation_field("relation", list(RELATIONS)))
         self.ui_label("Evidência que fundamenta a relação", 30, 383, s.MUTED, 350)
-        evidence = [item for item in EVIDENCE if self.inventory.contains(item["id"])]
+        evidence = [item for item in self.evidence if self.inventory.contains(item["id"])]
         label = next((item["title"] for item in evidence if item["id"] == review["evidence"]), "Selecionar evidência")
         self.ui_button(label + "  >", (28, 412, 355, 42),
                        lambda: self.cycle_relation_field("evidence", [item["id"] for item in evidence]))

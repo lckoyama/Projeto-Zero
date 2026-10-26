@@ -77,7 +77,7 @@ class GameTests(unittest.TestCase):
         self.assertEqual(len(game.inventory.ids), 8)
         game.begin_analysis()
         self.assertTrue(game.analysis_done)
-        for puzzle_index, puzzle in enumerate(PUZZLES):
+        for puzzle_index, puzzle in enumerate(game.puzzles):
             combinations = list(product(*(range(len(choices)) for _, choices in SHEETS[puzzle_index]["fields"])))
             wrong = next(values for values in combinations if not validate_sheet(puzzle_index, puzzle, values)[0])
             before = game.puzzle_index
@@ -93,7 +93,7 @@ class GameTests(unittest.TestCase):
             game.next_puzzle()
         game.submit()
         self.assertEqual(game.scene, "error")
-        game.accusation = [0, 0, 2, 3]
+        game.accusation = list(game.case["answer"])
         game.submit()
         self.assertEqual(game.scene, "victory")
         for scene in ["menu", "instructions", "intro", "world", "dialogue", "inventory",

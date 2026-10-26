@@ -59,9 +59,9 @@ TOPICS = {
 }
 
 
-def available_topics(pair, collected):
+def available_topics(pair, collected, topics=None):
     """Só apresenta afirmações cujas fontes já foram coletadas."""
-    return [key for key, topic in TOPICS.items()
+    return [key for key, topic in (TOPICS if topics is None else topics).items()
             if set(pair) <= topic["keys"] and topic["requires"] <= set(collected)]
 
 
@@ -89,7 +89,7 @@ def validate_review_shape(review):
             raise ValueError("Fórmula desconhecida.")
 
 
-def assess_review(pair, review, collected, talked):
+def assess_review(pair, review, collected, talked, topics=None):
     """Verifica contexto, fontes, premissas, consequência e regra da relação."""
     if review is None:
         return "pending", "Escolha a relação, a evidência e a justificativa lógica."
@@ -98,8 +98,8 @@ def assess_review(pair, review, collected, talked):
         return "pending", "Preencha a relação, a evidência, duas premissas, a conclusão e a regra."
     if not review["submitted"]:
         return "pending", "Justificativa preenchida. Clique em Verificar relação para avaliá-la."
-    topic = TOPICS[review["topic"]]
-    if review["topic"] not in available_topics(pair, collected):
+    topic = (TOPICS if topics is None else topics)[review["topic"]]
+    if review["topic"] not in available_topics(pair, collected, topics):
         return "rejected", "As fichas ou as fontes disponíveis não sustentam esta afirmação."
     if review["evidence"] not in collected:
         return "rejected", "A evidência indicada ainda não foi coletada."

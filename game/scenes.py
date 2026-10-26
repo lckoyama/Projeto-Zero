@@ -1,5 +1,6 @@
 """Cenas e loop de eventos. Nenhum diálogo interrompe o loop do Pygame."""
 import pygame
+from game.cases import CASE_REVISION, build_case, choose_case
 from game import settings as s
 from game.case_data import CHARACTERS, INTRO, SOLUTION, REASONING
 from game.dialogue import draw_text
@@ -34,7 +35,11 @@ class Game(HypothesisUI, DeductionUI, InvestigationUI, AbilityScenes):
         self.has_game = False
         self.reset()
 
-    def reset(self):
+    def reset(self, case_id="link", revision=CASE_REVISION):
+        self.case = build_case(case_id, revision)
+        self.case_id = self.case["id"]
+        for field in ("characters", "evidence", "computer", "puzzles", "sheets", "topics"):
+            setattr(self, field, self.case[field])
         self.bank = BankMap()
         self.character_art = CharacterArt()
         self.item_art = ItemArt()
@@ -43,7 +48,7 @@ class Game(HypothesisUI, DeductionUI, InvestigationUI, AbilityScenes):
         self.active_item = None
         self.player = Player()
         self.inventory = Inventory()
-        self.abilities = AbilitySystem()
+        self.abilities = AbilitySystem(self.case["ability_results"])
         self.active_person = None
         self.record_person = "Seu Antônio"
         self.ability_feedback = ""
@@ -62,7 +67,7 @@ class Game(HypothesisUI, DeductionUI, InvestigationUI, AbilityScenes):
         self.message = "Explore o banco. Aproxime-se dos marcadores e pressione E."
 
     def start(self):
-        self.reset()
+        self.reset(choose_case())
         self.has_game = True
         self.scene = "intro"
 
@@ -106,9 +111,9 @@ class Game(HypothesisUI, DeductionUI, InvestigationUI, AbilityScenes):
         self.scene = "dialogue"
 
     def nearest(self):
-        targets = [("person", person) for person in CHARACTERS]
-        targets += [("evidence", item) for item in EVIDENCE
-                    if self.abilities.visible(item["id"])] + [("computer", COMPUTER)]
+        targets = [("person", person) for person in self.characters]
+        targets += [("evidence", item) for item in self.evidence
+                    if self.abilities.visible(item["id"])] + [("computer", self.computer)]
         nearby = [(pygame.Vector2(item["pos"]).distance_to(self.player.rect.center), kind, item)
                   for kind, item in targets]
         distance, kind, item = min(nearby, key=lambda entry: entry[0])
@@ -146,21 +151,21 @@ class Game(HypothesisUI, DeductionUI, InvestigationUI, AbilityScenes):
             self.reset_sheet()
         self.feedback = ""
         self.correct = False
-        if self.puzzle_index == len(PUZZLES):
+        if self.puzzle_index == len(self.puzzles):
             self.scene = "board"
 
     def change_choice(self, row):
         self.accusation[row] = (self.accusation[row] + 1) % len(self.final_options()[row])
 
     def final_options(self):
-        return [[person["name"] for person in CHARACTERS],
-                ["Link malicioso", "Falha na rede interna", "Pendrive", "Dispositivo transmissor"],
+        return [[person["name"] for person in self.characters],
+                ["Link malicioso", "Falha na rede interna", "Pendrive", "Dispositivo transmissor", "Arquivo adulterado", "Extensão maliciosa", "Sabotagem de registros"],
                 ["Notebook externo", "Computador interno", "Celular conectado ao Wi-Fi", "Dispositivo transmissor", "Pendrive"],
                 ["19h50", "20h20", "20h30", "20h35", "20h45", "21h07", "21h15"]]
 
     def submit(self):
-        if self.analysis_done and self.puzzle_index == len(PUZZLES):
-            self.scene = "victory" if self.accusation == [0, 0, 2, 3] else "error"
+        if self.analysis_done and self.puzzle_index == len(self.puzzles):
+            self.scene = "victory" if self.accusation == self.case["answer"] else "error"
 
     def handle_event(self, event):
         if event.type == pygame.MOUSEBUTTONUP or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE):
@@ -220,13 +225,13 @@ class Game(HypothesisUI, DeductionUI, InvestigationUI, AbilityScenes):
         pygame.draw.rect(self.screen, s.RED, (25, 22, 5, 31), border_radius=2)
         self.bank.draw(self.screen, self.small)
         target = self.nearest()
-        for person in CHARACTERS:
+        for person in self.characters:
             color = s.GREEN if person["name"] in self.talked else s.BLUE
             active = target and target[0] == "person" and target[1] is person
             self.character_art.draw_marker(self.screen, person["name"], person["pos"], color, active)
             if active:
                 self.draw_target_label(person["name"], person["pos"], color)
-        for item in EVIDENCE + [COMPUTER]:
+        for item in self.evidence + [self.computer]:
             if not self.abilities.visible(item.get("id")):
                 continue
             item_id = item.get("id", "computer")
@@ -263,7 +268,7 @@ class Game(HypothesisUI, DeductionUI, InvestigationUI, AbilityScenes):
 
     def draw_inventory(self):
         self.title("Inventário de evidências", "Selecione uma pista para reler o laudo. Esc: voltar ao banco.")
-        found = [item for item in EVIDENCE if self.inventory.contains(item["id"])]
+        found = [item for item in self.evidence if self.inventory.contains(item["id"])]
         for index, item in enumerate(found):
             self.button(item["title"], (60, 130 + index * 65, 380, 55),
                         lambda i=index: setattr(self, "selection", i))
@@ -277,7 +282,7 @@ class Game(HypothesisUI, DeductionUI, InvestigationUI, AbilityScenes):
         self.button("Voltar ao banco", (880, 710, 260, 56), lambda: self.set_scene("world"))
 
     def begin_analysis(self):
-        if len(self.inventory.ids) == len(EVIDENCE):
+        if len(self.inventory.ids) == len(self.evidence):
             self.analysis_done = True
             self.scene = "puzzle"
 
@@ -321,9 +326,9 @@ class Game(HypothesisUI, DeductionUI, InvestigationUI, AbilityScenes):
             pygame.draw.rect(self.screen, (11, 17, 27), art_rect, border_radius=5)
             self.bank.art.draw(self.screen, index, art_rect)
 
-            people = [person["name"] for person in CHARACTERS if person["room"] == index]
+            people = [person["name"] for person in self.characters if person["room"] == index]
             room_evidence = []
-            for item in EVIDENCE:
+            for item in self.evidence:
                 item_room = min(range(len(self.bank.rooms)),
                                 key=lambda room_index: pygame.Vector2(self.bank.rooms[room_index].center)
                                 .distance_to(item["pos"]))
@@ -331,9 +336,9 @@ class Game(HypothesisUI, DeductionUI, InvestigationUI, AbilityScenes):
                     room_evidence.append(item)
             if index == min(range(len(self.bank.rooms)),
                             key=lambda room_index: pygame.Vector2(self.bank.rooms[room_index].center)
-                            .distance_to(COMPUTER["pos"])):
+                            .distance_to(self.computer["pos"])):
                 if self.abilities.visible("computer"):
-                    room_evidence.append(COMPUTER)
+                    room_evidence.append(self.computer)
 
             self.ui_label("PESSOAS", card.x + 220, card.y + 59, CYAN, 135)
             self.ui_label(", ".join(people) or "Nenhuma registrada", card.x + 220, card.y + 83, s.TEXT, 135)
@@ -374,7 +379,7 @@ class Game(HypothesisUI, DeductionUI, InvestigationUI, AbilityScenes):
             self.button("Voltar ao menu", (60, 710, 300, 56), lambda: self.set_scene("menu"))
         elif self.scene == "intro":
             self.title("Fase 1 / O incidente")
-            self.text(INTRO, y=180)
+            self.text(self.case["intro"] + "\n\nA solução é sorteada a cada nova investigação. Leia os laudos desta partida; carregar preserva o mesmo caso.", y=180)
             self.button("Abrir investigação [Enter]", (60, 550, 440, 60), lambda: self.set_scene("board"))
         elif self.scene == "dialogue":
             self.title(self.dialogue_title)
@@ -427,9 +432,9 @@ class Game(HypothesisUI, DeductionUI, InvestigationUI, AbilityScenes):
             self.button("Revisar conclusão", (60, 420, 460, 60), lambda: self.set_scene("conclusion"))
             self.button("Voltar às evidências", (60, 500, 460, 60), lambda: self.set_scene("inventory"))
         elif self.scene == "victory":
-            self.title("Caso resolvido / raciocínio demonstrado", "PROTOCOLO ZERO • RECONSTRUÇÃO FINAL")
-            y = self.text(SOLUTION, y=125, color=s.GREEN) + 20
-            for index, step in enumerate(REASONING):
+            self.title("Caso resolvido / " + self.case["title"], "PROTOCOLO ZERO • RECONSTRUÇÃO FINAL")
+            y = self.text(self.case["solution"], y=125, color=s.GREEN) + 20
+            for index, step in enumerate(self.case["reasoning"]):
                 y = self.text(f"{index + 1}. {step}", y=y, small=True) + 7
             self.button("Menu inicial", (60, 725, 300, 56), lambda: self.set_scene("menu"))
 

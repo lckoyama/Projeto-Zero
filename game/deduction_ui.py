@@ -10,7 +10,7 @@ from game.puzzles import PUZZLES
 
 class DeductionUI:
     def reset_sheet(self):
-        self.sheet_answers = [None] * len(SHEETS[min(self.puzzle_index, len(SHEETS) - 1)]["fields"])
+        self.sheet_answers = [None] * len(self.sheets[min(self.puzzle_index, len(self.sheets) - 1)]["fields"])
         self.sheet_field = 0
         self.sheet_source = 0
 
@@ -21,7 +21,7 @@ class DeductionUI:
     def choose_sheet_token(self, choice):
         if self.feedback:
             return
-        sheet = SHEETS[self.puzzle_index]
+        sheet = self.sheets[self.puzzle_index]
         choices = sheet["fields"][self.sheet_field][1]
         if not 0 <= choice < len(choices):
             return
@@ -35,7 +35,7 @@ class DeductionUI:
     def check_sheet(self):
         if self.feedback:
             return
-        self.correct, explanation = validate_sheet(self.puzzle_index, PUZZLES[self.puzzle_index], self.sheet_answers)
+        self.correct, explanation = validate_sheet(self.puzzle_index, self.puzzles[self.puzzle_index], self.sheet_answers)
         self.feedback = ("Dedução validada. " if self.correct else "Revise sua dedução. ") + explanation
 
     def sheet_keyboard(self, key):
@@ -50,7 +50,7 @@ class DeductionUI:
             self.sheet_field = (self.sheet_field + 1) % len(self.sheet_answers)
 
     def draw_puzzle(self):
-        puzzle, sheet = PUZZLES[self.puzzle_index], SHEETS[self.puzzle_index]
+        puzzle, sheet = self.puzzles[self.puzzle_index], self.sheets[self.puzzle_index]
         self.dossier_header("MESA DE DEDUÇÃO / LÓGICA MATEMÁTICA")
         self.ui_button("Voltar ao mural", (1000, 17, 175, 32), lambda: self.set_scene("board"))
         self.text(sheet["title"], x=25, y=84, width=1000, color=CYAN)
@@ -92,7 +92,7 @@ class DeductionUI:
                 self.ui_button(str(index + 1), (875 + index * 50, 191, 40, 27),
                                lambda i=index: setattr(self, "sheet_source", i), active=index == self.sheet_source)
             key = sources[self.sheet_source]
-            evidence = next(item for item in EVIDENCE if item["id"] == key)
+            evidence = next(item for item in self.evidence if item["id"] == key)
             available = self.inventory.contains(key)
             if available:
                 self.entry_art("evidence:" + key, (947, 230, 130, 105))

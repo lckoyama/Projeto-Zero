@@ -5,10 +5,18 @@ from game import settings as s
 from game.abilities import (ABILITIES, ABILITY_CHALLENGES, DIGITAL_PUZZLE,
                             validate_ability_challenge)
 from game.case_data import CHARACTERS
+from game.puzzles import validate
 from game.savegame import load_progress, save_progress
 
 
 class AbilityScenes:
+    def ability_puzzle(self, name):
+        if name == "Márcia":
+            return self.puzzles[5]
+        if name == "Carlos":
+            return self.puzzles[6]
+        return ABILITY_CHALLENGES[name]
+
     def open_ability(self):
         if self.active_person:
             self.ability_feedback = ""
@@ -25,7 +33,12 @@ class AbilityScenes:
         legacy_activation = person["name"] != "Bianca" and (
             choice is None or isinstance(choice, str))
         if person["name"] != "Bianca" and person["name"] in ABILITY_CHALLENGES and not legacy_activation:
-            correct, detail = validate_ability_challenge(person["name"], choice)
+            puzzle = self.ability_puzzle(person["name"])
+            if type(choice) is not int or not 0 <= choice < len(puzzle["options"]):
+                self.ability_success = False
+                self.ability_feedback = "Selecione uma opção do desafio."
+                return
+            correct, detail = validate(puzzle, choice)
             if not correct:
                 self.ability_success = False
                 self.ability_feedback = "Revise a inferência. " + detail
@@ -53,7 +66,7 @@ class AbilityScenes:
                 self.button(label, (60 + index * 365, 335, 340, 55),
                             lambda i=index: self.use_ability(i))
         else:
-            puzzle = ABILITY_CHALLENGES[self.active_person]
+            puzzle = self.ability_puzzle(self.active_person)
             self.text(puzzle["context"], y=185)
             for index, (label, _) in enumerate(puzzle["options"]):
                 column = index % 3

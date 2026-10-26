@@ -2,6 +2,16 @@
 
 Jogo local de investigação top-down, feito apenas com Python e Pygame para a disciplina de Resolução de Problemas com Lógica Matemática. Salas ilustradas com imagens locais, sem web ou banco de dados.
 
+## Iniciar o jogo
+
+Na pasta do projeto, abra o terminal do PowerShell e execute:
+
+```powershell
+.\.venv\Scripts\python.exe main.py
+```
+
+Se o ambiente Python já estiver ativado, use `python main.py`. Na primeira execução, crie o ambiente e instale as dependências seguindo a seção [Executar no VS Code](#executar-no-vs-code).
+
 ## Referência visual do projeto
 
 ![Referência visual de Protocolo Zero, com os sete personagens, os itens de investigação e as seis salas do banco](assets/reference/protocolo-zero.png)
@@ -32,6 +42,39 @@ python main.py
 No VS Code, selecione `.venv` em **Python: Select Interpreter**. Uma sessão gráfica local é necessária para jogar. Sem Pygame, a entrada mostra o comando de instalação em vez de um traceback.
 
 ## Controles e progressão
+
+### Histórias sorteadas
+
+Cada **nova investigação** sorteia uma de quatro histórias, com a mesma chance para cada uma. O sorteio pode repetir um caso. Retomar ou carregar mantém a história e a revisão narrativa da partida; salvamentos anteriores preservam as histórias antigas, e arquivos sem identificador de caso usam o final original. Depoimentos, habilidades, laudos, cronologia, inferências e reconstrução acompanham a história escolhida. Ainda é necessário reunir oito pistas e resolver oito desafios.
+
+**Spoilers — soluções possíveis:**
+
+| História | Pessoa | Método | Equipamento | Evento inicial |
+| --- | --- | --- | --- | --- |
+| O link na sala de lazer | Seu Antônio | Link malicioso | Celular conectado ao Wi-Fi | 20h35 |
+| O apagamento planejado | Jonas | Sabotagem de registros | Pendrive | 20h30 |
+| A porta deixada aberta | Márcia | Falha na rede interna | Computador interno | 20h45 |
+| O transmissor clandestino | Carlos | Dispositivo transmissor | Dispositivo transmissor | 20h20 |
+
+**1. O link na sala de lazer — Seu Antônio**
+
+Às **20h35**, Seu Antônio abre um link malicioso no **celular conectado ao Wi-Fi** durante sua pausa. O evento compromete credenciais, posteriormente usadas por criminosos externos para acessar o banco. Ele desencadeia o incidente **sem intenção**, não sendo o autor deliberado do ataque. O histórico do navegador e o laudo pericial estabelecem o vínculo entre o clique e a captura das credenciais.
+
+**2. O apagamento planejado — Jonas**
+
+Às **20h30**, Jonas usa o **pendrive** para apagar registros e suas cópias, tentando impedir uma auditoria. Ele alega que estava fazendo manutenção, mas o roteiro recuperado e a execução assinada comprovam **sabotagem deliberada**. Bianca havia usado o mesmo pendrive às 20h20, em um teste autorizado e inofensivo; a rotina destrutiva foi adicionada depois. O alerta detecta a perda de integridade dos registros, sem roubo de credenciais.
+
+**3. A porta deixada aberta — Márcia**
+
+Às **20h45**, Márcia tenta corrigir o acesso aos relatórios pelo **computador interno** e aplica um perfil antigo de permissões. A configuração desativa a exigência de autenticação, permitindo que terceiros consultem os documentos expostos. Foi uma **falha de configuração acidental**, não uma sabotagem. O registro de alterações e o histórico de suporte corroboram sua tentativa de corrigir o problema. Não houve link malicioso nem captura de credenciais.
+
+**4. O transmissor clandestino — Carlos**
+
+Às **20h20**, Carlos instala e ativa um **dispositivo transmissor** nos servidores para enviar documentos confidenciais a um receptor externo. Ele afirma que o aparelho era um medidor elétrico, mas a configuração recuperada e os pacotes assinados comprovam **extração deliberada de dados**. Sua ordem de serviço não autorizava essa instalação. O aparelho só é encontrado às **21h15**; esse horário não corresponde ao início do envio. Neste caso, Modus Tollens exclui o notebook, enquanto a perícia comprova o uso do transmissor.
+
+Em todos os finais, **21h07 é o horário do alerta, não o início do incidente**. Apenas o primeiro caso envolve captura de credenciais. As três histórias adicionais são ficção do jogo; os laudos da partida prevalecem sobre as descrições do caso original nas seções abaixo.
+
+### Como jogar
 
 A investigação começa em um painel inspirado em murais de detetive, com interface escura, destaques em ciano, fichas fotográficas e ligações verificáveis. Clique em **Explorar banco** para controlar o investigador e use **J** para retornar ao mural.
 

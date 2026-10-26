@@ -3,6 +3,7 @@ import json
 from pathlib import Path
 
 from game.abilities import ABILITIES
+from game.cases import build_case
 from game.evidence import EVIDENCE
 from game.puzzles import PUZZLES
 from game.board import BoardState
@@ -14,7 +15,7 @@ def save_progress(game, path=SAVE_PATH):
     """Grava primeiro um temporário e substitui o arquivo apenas ao concluir."""
     path = Path(path)
     data = {
-        "version": 1, "evidence": sorted(game.inventory.ids),
+        "version": 1, "case_id": game.case_id, "case_revision": game.case["revision"], "evidence": sorted(game.inventory.ids),
         "talked": sorted(game.talked), "inspected": sorted(game.abilities.inspected),
         "used": sorted(game.abilities.used), "records": game.abilities.records,
         "analysis_done": game.analysis_done, "puzzle_index": game.puzzle_index,
@@ -44,6 +45,7 @@ def load_progress(game, path=SAVE_PATH):
     data = json.loads(Path(path).read_text(encoding="utf-8"))
     if not isinstance(data, dict) or data.get("version") != 1:
         raise ValueError("Versão de salvamento incompatível.")
+    case = build_case(data.get("case_id", "link"), data.get("case_revision", 1))
     evidence_ids = {item["id"] for item in EVIDENCE}
     evidence = _string_set(data.get("evidence"), evidence_ids)
     talked = _string_set(data.get("talked"), set(ABILITIES))
@@ -82,7 +84,7 @@ def load_progress(game, path=SAVE_PATH):
         raise ValueError("Seleção de conclusão inválida.")
     board = BoardState.restore(data.get("board"), evidence)
     # Só modifica o jogo depois de validar todos os campos.
-    game.reset()
+    game.reset(case["id"], case["revision"])
     game.inventory.ids, game.talked = evidence, talked
     game.abilities.inspected, game.abilities.used = inspected, used
     game.abilities.records = records

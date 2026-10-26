@@ -87,7 +87,8 @@ REQUIREMENT_NAMES = {
 
 
 class AbilitySystem:
-    def __init__(self):
+    def __init__(self, results=None):
+        self.results = results if results is not None else {name: ability["result"] for name, ability in ABILITIES.items()}
         self.inspected = set()
         self.used = set()
         self.records = {}
@@ -132,7 +133,7 @@ class AbilitySystem:
                       + ("Compatível com o intervalo." if compatible else "Contradição com o intervalo.")
                       + " É uma hipótese de análise, não um novo depoimento.")
         self.used.add(name)
-        self.records[name] = ability["result"] + (" " + detail if detail else "")
+        self.records[name] = self.results[name] + (" " + detail if detail else "")
         for evidence_id in ability["evidence"]:
             inventory.collect(evidence_id)
         return True, self.records[name]

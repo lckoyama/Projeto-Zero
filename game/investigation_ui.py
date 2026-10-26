@@ -54,7 +54,7 @@ class InvestigationUI:
     def entry(self, key):
         kind, identifier = key.split(":", 1)
         if kind == "person":
-            person = CHARACTERS[int(identifier)]
+            person = self.characters[int(identifier)]
             heard = person["name"] in self.talked
             body = person["role"] + "\n\n" + person["skill"]
             body += "\n\n" + ABILITIES[person["name"]]["name"] + ": " + ABILITIES[person["name"]]["description"]
@@ -64,12 +64,12 @@ class InvestigationUI:
             return person["name"], person["role"].split(" • ")[0], body, heard
         if kind == "room":
             index = int(identifier)
-            people = ", ".join(p["name"] for p in CHARACTERS if p["room"] == index)
+            people = ", ".join(p["name"] for p in self.characters if p["room"] == index)
             return ROOM_NAMES[index].split(" / ")[1], "LOCAL DE INVESTIGAÇÃO", (
                 "Personagens disponíveis: " + people + ".\n\nEntre pela porta voltada ao corredor central. "
                 "Examine objetos com E e consulte as habilidades dos personagens.\n\n"
                 "A posição atual no mapa não é um álibi histórico. Os horários devem ser verificados nos registros."), False
-        item = COMPUTER if identifier == "computer" else next(e for e in EVIDENCE if e["id"] == identifier)
+        item = self.computer if identifier == "computer" else next(e for e in self.evidence if e["id"] == identifier)
         known = ("computer" in self.abilities.inspected if identifier == "computer"
                  else self.inventory.contains(identifier))
         text = item["text"] if known else "Registro ainda não disponível. Examine o equipamento no banco e cumpra os requisitos de análise para consultar suas evidências."
@@ -78,7 +78,7 @@ class InvestigationUI:
     def entry_art(self, key, rect):
         kind, identifier = key.split(":", 1)
         if kind == "person":
-            return self.character_art.draw(self.screen, CHARACTERS[int(identifier)]["name"], rect)
+            return self.character_art.draw(self.screen, self.characters[int(identifier)]["name"], rect)
         if kind == "room":
             return self.bank.art.draw(self.screen, int(identifier), rect)
         if self.item_art.draw(self.screen, identifier, rect):
@@ -98,7 +98,7 @@ class InvestigationUI:
             return [f"room:{i}" for i in range(6)]
         if self.catalog == "item":
             return [f"item:{key}" for key in ITEM_IDS]
-        return [f"evidence:{item['id']}" for item in EVIDENCE if self.inventory.contains(item["id"])]
+        return [f"evidence:{item['id']}" for item in self.evidence if self.inventory.contains(item["id"])]
 
     def choose_catalog(self, category):
         self.catalog, self.catalog_page = category, 0
@@ -247,7 +247,7 @@ class InvestigationUI:
         for index in range(8):
             pygame.draw.rect(self.screen, CYAN if index < count else EDGE, (998 + index * 23, 631, 18, 4))
         ready = count == 8
-        finished = self.puzzle_index == len(PUZZLES)
+        finished = self.puzzle_index == len(self.puzzles)
         label = "Apresentar conclusão" if finished else "Resolver lógica" if ready else "Reúna as 8 pistas"
         def progress():
             if finished:
@@ -284,8 +284,14 @@ class InvestigationUI:
             ("access", "21h07", "Identificação do acesso indevido", "Horário da detecção pelo banco, não necessariamente do início do incidente."),
             ("transmitter", "21h15", "Transmissor encontrado", "Horário da descoberta; a análise técnica é necessária para avaliar seu uso."),
         ]
+        if self.case["revision"] >= 2 and self.case_id != "link":
+            events[4] = ("access", "21h07", "Detecção do incidente", "O alerta surgiu depois do evento inicial. Consulte o laudo do incidente.")
+            if self.case_id == "extension":
+                events[3] = ("computer", "20h45", "Alteração de permissões", "Márcia aplicou um perfil antigo durante a consulta de relatórios.")
+        events += self.case["timeline_extra"]
+        events.sort(key=lambda event: event[1])
         for index, (key, time, title, description) in enumerate(events):
-            y = 207 + index * 75
+            y = 185 + index * 72
             known = key in self.inventory.ids or (key == "computer" and key in self.abilities.inspected)
             pygame.draw.rect(self.screen, (16, 25, 38), (60, y, 1080, 65), border_radius=4)
             self.ui_label(time if known else "--:--", 80, y + 21, CYAN if known else s.MUTED, 150)
@@ -308,14 +314,14 @@ class InvestigationUI:
                            lambda value=row: self.change_choice(value))
         self.ui_button("Voltar ao mural", (60, 707, 260, 46), lambda: self.set_scene("board"))
         self.ui_button("Validar reconstrução", (385, 707, 350, 46), self.submit,
-                       active=True, enabled=self.analysis_done and self.puzzle_index == len(PUZZLES))
+                       active=True, enabled=self.analysis_done and self.puzzle_index == len(self.puzzles))
 
     def draw_case_menu(self):
         self.dossier_header("DOSSIÊ 001 / ACESSO RESTRITO")
         self.ui_label("BANCO / INVESTIGAÇÃO EM ABERTO", 54, 123, CYAN, 500)
         self.screen.blit(self.heading.render("PROTOCOLO ZERO", True, s.TEXT), (50, 169))
         self.text("O Mistério da Invasão Bancária", x=54, y=220, width=500, color=s.MUTED)
-        self.text("Uma invasão. Oito evidências.\nUma conclusão que precisa de prova.", x=54, y=292, width=450)
+        self.text("Um incidente. Oito evidências.\nUma conclusão que precisa de prova.", x=54, y=292, width=450)
         self.text("Explore o banco, consulte os depoimentos e conecte suas hipóteses no mural. Use lógica matemática para reconstruir o incidente.", x=54, y=393, width=435, small=True, color=s.MUTED)
         self.ui_button("INICIAR INVESTIGAÇÃO", (54, 520, 400, 48), self.start, active=True)
         self.ui_button("Retomar", (54, 583, 194, 40),
