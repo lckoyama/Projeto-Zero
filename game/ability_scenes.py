@@ -10,6 +10,9 @@ from game.savegame import load_progress, save_progress
 
 
 class AbilityScenes:
+    def ability_available(self, name):
+        return ABILITIES[name]["requires"] <= self.abilities.inspected
+
     def ability_puzzle(self, name):
         if name == "Márcia":
             return self.puzzles[5]
@@ -18,7 +21,7 @@ class AbilityScenes:
         return ABILITY_CHALLENGES[name]
 
     def open_ability(self):
-        if self.active_person:
+        if self.active_person and self.ability_available(self.active_person):
             self.ability_feedback = ""
             self.scene = "ability"
 

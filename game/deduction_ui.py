@@ -105,7 +105,7 @@ class DeductionUI:
         else:
             self.ui_label("EXERCÍCIO FORMAL", 874, 200, s.MUTED, 285)
             self.ui_label(sheet["note"], 874, 243, s.TEXT, 285)
-            self.ui_label("¬  negação\n∧  conjunção\n∨  disjunção inclusiva\n→  condicional\n↔  bicondicional", 874, 389, CYAN, 285)
+            self.ui_label("¬  negação\n&  conjunção\n|  disjunção inclusiva\n→  condicional\n↔  bicondicional", 874, 389, CYAN, 285)
         pygame.draw.rect(self.screen, (15, 24, 36), (24, 587, 1152, 189), border_radius=4)
         if self.feedback:
             self.ui_label("RESULTADO DA VERIFICAÇÃO", 42, 603, s.GREEN if self.correct else s.RED, 1080)

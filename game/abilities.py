@@ -24,7 +24,7 @@ ABILITIES = {
         "name": "Conhecimento Bancário", "room": 1,
         "description": "Interpreta documentos e distingue apresentação institucional de atividade financeira.",
         "requires": {"laptop"}, "evidence": {"laptop"},
-        "result": "O documento do notebook é uma apresentação institucional, não uma ordem de movimentação financeira. Regra de triagem: inconsistência documental ∨ divergência de finalidade exige revisão. A apresentação, por si só, não prova nem afasta um ataque; confronte-a com o laudo técnico.",
+        "result": "O documento do notebook é uma apresentação institucional, não uma ordem de movimentação financeira. Regra de triagem: inconsistência documental | divergência de finalidade exige revisão. A apresentação, por si só, não prova nem afasta um ataque; confronte-a com o laudo técnico.",
     },
     "Márcia": {
         "name": "Auditoria Financeira", "room": 5,
@@ -36,7 +36,7 @@ ABILITIES = {
         "name": "Controle de Agenda", "room": 1,
         "description": "Compara uma hipótese de horário com o intervalo registrado da reunião.",
         "requires": {"laptop"}, "evidence": set(),
-        "result": "Agenda: apresentação de Arthur entre 19h50 e 20h30. Compatibilidade de horário ↔ (horário ≥ 19h50 ∧ horário ≤ 20h30). Uma contradição com esse intervalo invalida a hipótese sobre a reunião, mas não estabelece culpa.",
+        "result": "Agenda: apresentação de Arthur entre 19h50 e 20h30. Compatibilidade de horário ↔ (horário ≥ 19h50 & horário ≤ 20h30). Uma contradição com esse intervalo invalida a hipótese sobre a reunião, mas não estabelece culpa.",
     },
     "Carlos": {
         "name": "Inspeção Técnica", "room": 4,
@@ -48,10 +48,10 @@ ABILITIES = {
 
 DIGITAL_PUZZLE = {
     "title": "Análise Digital / autorização de leitura", "kind": "inference",
-    "context": "R: o registro está preservado. A: a análise está autorizada. L: a leitura pode ser liberada. Premissas do procedimento: R, A e (R ∧ A) → L. Qual conclusão decorre dessas premissas?",
+    "context": "R: o registro está preservado. A: a análise está autorizada. L: a leitura pode ser liberada. Premissas do procedimento: R, A e (R & A) → L. Qual conclusão decorre dessas premissas?",
     "premises": ["R", "A", ("implies", ("and", "R", "A"), "L")],
     "options": [("¬L", ("not", "L")), ("L", "L"), ("¬R", ("not", "R"))],
-    "explanation": "R e A permitem R ∧ A; com (R ∧ A) → L, Modus Ponens permite L. Isso libera a análise, não uma conclusão sobre a invasão.",
+    "explanation": "R e A permitem R & A; com (R & A) → L, Modus Ponens permite L. Isso libera a análise, não uma conclusão sobre a invasão.",
 }
 
 # Desafios de autorização relacionados ao tipo de análise de cada personagem.

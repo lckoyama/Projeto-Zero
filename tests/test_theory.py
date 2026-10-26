@@ -33,7 +33,7 @@ class TheoryTests(unittest.TestCase):
                     self.assertEqual(assess_theory(case, theory, known, {"computer"})[field][0], "unsupported")
                     theory["choices"][field] = choice
                 theory["submitted"] = False
-                self.assertTrue(all(s == "pending" for s, _ in assess_theory(case, theory, known, {"computer"})))
+                self.assertTrue(all(s == "supported" for s, _ in assess_theory(case, theory, known, {"computer"})))
 
     def setUp(self):
         self.game = Game()
@@ -113,4 +113,4 @@ class TheoryTests(unittest.TestCase):
         game.handle_event(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_ESCAPE))
         self.assertEqual(game.scene, "board")
         game.draw()
-        self.assertTrue(any(action == game.open_theory for _, action in game.buttons))
+        self.assertFalse(any(action == game.open_theory for _, action in game.buttons))

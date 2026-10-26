@@ -23,18 +23,21 @@ class RoomArt:
         self.images = [load_room_image(ROOM_ASSETS / name) for name in ROOM_FILES]
         self.scaled = {}
 
-    def draw(self, surface, index, area):
-        """Encaixa a imagem inteira sem distorção, com versões reduzidas em cache."""
+    def draw(self, surface, index, area, fill=False):
+        """Desenha a sala proporcionalmente ou preenchendo toda a área."""
         source = self.images[index]
         if source is None:
             return False
         area = pygame.Rect(area)
-        key = (index, area.size)
+        key = (index, area.size, fill)
         if key not in self.scaled:
-            ratio = min(area.width / source.get_width(), area.height / source.get_height())
-            size = (max(1, round(source.get_width() * ratio)),
-                    max(1, round(source.get_height() * ratio)))
+            if fill:
+                size = area.size
+            else:
+                ratio = min(area.width / source.get_width(), area.height / source.get_height())
+                size = (max(1, round(source.get_width() * ratio)),
+                        max(1, round(source.get_height() * ratio)))
             self.scaled[key] = pygame.transform.scale(source, size)
         picture = self.scaled[key]
-        surface.blit(picture, picture.get_rect(center=area.center))
+        surface.blit(picture, area if fill else picture.get_rect(center=area.center))
         return True

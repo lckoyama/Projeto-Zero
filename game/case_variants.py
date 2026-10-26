@@ -66,8 +66,8 @@ def build_case(case_id="link", revision=CASE_REVISION):
             "A mudança expôs relatórios sem autenticação; não houve transferência financeira. "
             "O histórico de suporte corrobora a tentativa de corrigir o acesso, sem indício de sabotagem.")
         case["puzzles"][1]["values"]["F"] = True
-        case["puzzles"][1]["context"] = "W: há conexão Wi-Fi (V). H: há histórico preservado (V). F: há falha interna (V). Avalie (W ∧ H) ∨ F. A disjunção é inclusiva."
-        case["puzzles"][1]["explanation"] = "W ∧ H é V; V ∨ V é V. Os registros confirmam a falha de configuração."
+        case["puzzles"][1]["context"] = "W: há conexão Wi-Fi (V). H: há histórico preservado (V). F: há falha interna (V). Avalie (W & H) | F. A disjunção é inclusiva."
+        case["puzzles"][1]["explanation"] = "W & H é V; V | V é V. Os registros confirmam a falha de configuração."
         case["solution"] = (
             "Márcia tentou corrigir o acesso aos relatórios às 20h45, mas aplicou um perfil antigo "
             "que desativava a autenticação. Terceiros consultaram o compartilhamento exposto. "

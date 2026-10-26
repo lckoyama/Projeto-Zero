@@ -4,6 +4,7 @@ from pathlib import Path
 import pygame
 
 from game.room_art import RoomArt, load_room_image
+from game.map_markers import draw_marker
 
 ITEM_FILES = {
     "wifi": "celular.png", "computer": "computador.png",
@@ -28,17 +29,4 @@ class ItemArt(RoomArt):
     def draw_marker(self, surface, key, position, collected, active=False):
         """Pino geométrico discreto; o equipamento é exibido ao inspecionar."""
         color = (102, 216, 167) if collected else (238, 181, 99)
-        center = pygame.Vector2(position)
-        pygame.draw.circle(surface, (7, 14, 24), center, 17)
-        pygame.draw.circle(surface, color, center, 15, 2)
-        if active:
-            pygame.draw.circle(surface, color, center, 21, 2)
-        points = [(center.x, center.y - 12), (center.x + 12, center.y),
-                  (center.x, center.y + 12), (center.x - 12, center.y)]
-        pygame.draw.polygon(surface, color, points)
-        pygame.draw.polygon(surface, (255, 246, 215),
-                            [(center.x, center.y - 6), (center.x + 6, center.y),
-                             (center.x, center.y + 6), (center.x - 6, center.y)])
-        if collected:
-            pygame.draw.circle(surface, (7, 14, 24), (center.x + 13, center.y - 13), 6)
-            pygame.draw.circle(surface, color, (center.x + 13, center.y - 13), 5)
+        draw_marker(surface, "item", position, color, active, collected)

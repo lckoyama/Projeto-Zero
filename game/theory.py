@@ -48,8 +48,6 @@ def assess_theory(case, theory, collected, inspected):
             results.append(("pending", "Escolha uma opção e associe as fontes que a sustentam."))
         elif not sources <= known:
             results.append(("pending", "Uma fonte selecionada ainda não está disponível."))
-        elif not theory["submitted"]:
-            results.append(("pending", "Rascunho alterado. Verifique novamente a hipótese."))
         elif not required <= sources:
             results.append(("unsupported", "As fontes associadas não bastam para demonstrar este campo. Cruze os registros do evento com os laudos pertinentes."))
         elif choice != case["answer"][index]:

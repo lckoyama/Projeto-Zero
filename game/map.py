@@ -28,7 +28,7 @@ class BankMap:
                   (25, 43, 65), (24, 36, 57), (40, 43, 53)]
         for index, rect in enumerate(self.rooms):
             pygame.draw.rect(surface, colors[index], rect)
-            illustrated = self.art.draw(surface, index, rect.inflate(-18, -18))
+            illustrated = self.art.draw(surface, index, rect.inflate(-16, -16), fill=True)
             label = font.render(ROOM_NAMES[index], True, (195, 221, 240))
             pygame.draw.rect(surface, (12, 18, 29), (rect.x + 12, rect.y + 12, label.get_width() + 12, label.get_height() + 8), border_radius=4)
             surface.blit(label, (rect.x + 18, rect.y + 16))

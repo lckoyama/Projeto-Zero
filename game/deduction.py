@@ -13,7 +13,7 @@ SHEETS = [
      "sources": [], "note": "Exercício de valoração. P é verdadeira nesta situação; isso não acrescenta um fato à história."},
     {"title": "02 / Combine os registros", "mode": "values",
      "instruction": "Resolva primeiro a conjunção e depois a expressão completa.",
-     "fields": [("W ∧ H =", BOOL_CHOICES), ("(W ∧ H) ∨ F =", BOOL_CHOICES)],
+     "fields": [("W & H =", BOOL_CHOICES), ("(W & H) | F =", BOOL_CHOICES)],
      "expressions": [("and", "W", "H"), ("or", ("and", "W", "H"), "F")],
      "sources": ["wifi", "browser", "credentials"], "note": "A conexão e o histórico são informações distintas. A conclusão causal exige o laudo pericial."},
     {"title": "03 / Construa a tabela-verdade", "mode": "table",
@@ -26,11 +26,11 @@ SHEETS = [
      "fields": [("P ↔ Q =", BOOL_CHOICES)], "expressions": [("iff", "P", "Q")],
      "sources": [], "note": "Esta linha hipotética não é uma nova evidência. Avalie apenas os valores fornecidos."},
     {"title": "05 / Monte uma expressão equivalente", "mode": "equivalence",
-     "instruction": "Preencha termo, conectivo e termo para obter uma expressão equivalente a ¬(P ∧ Q).",
+     "instruction": "Preencha termo, conectivo e termo para obter uma expressão equivalente a ¬(P & Q).",
      "fields": [("Primeiro termo", TERMS),
-                ("Conectivo", [("∧", "and"), ("∨", "or"), ("→", "implies"), ("↔", "iff")]),
+                ("Conectivo", [("&", "and"), ("|", "or"), ("→", "implies"), ("↔", "iff")]),
                 ("Segundo termo", TERMS)],
-     "sources": [], "note": "A expressão será comparada com ¬(P ∧ Q) em todas as quatro valorações. Mais de uma escrita equivalente pode ser aceita."},
+     "sources": [], "note": "A expressão será comparada com ¬(P & Q) em todas as quatro valorações. Mais de uma escrita equivalente pode ser aceita."},
     {"title": "06 / Do evento às credenciais", "mode": "inference",
      "instruction": "Complete a conclusão e identifique a regra que justifica esta passagem.",
      "fields": [("Logo, concluo", TERMS), ("Pela regra", RULES)],
@@ -55,7 +55,7 @@ def format_expression(expression):
     operator, *terms = expression
     if operator == "not":
         return "¬" + format_expression(terms[0])
-    symbol = {"and": "∧", "or": "∨", "implies": "→", "iff": "↔"}[operator]
+    symbol = {"and": "&", "or": "|", "implies": "→", "iff": "↔"}[operator]
     return f"({format_expression(terms[0])} {symbol} {format_expression(terms[1])})"
 
 

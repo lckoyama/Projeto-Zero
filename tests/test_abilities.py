@@ -2,6 +2,7 @@
 import unittest
 
 from game.abilities import ABILITIES, AbilitySystem, DIGITAL_PUZZLE
+from game.ability_scenes import AbilityScenes
 from game.case_data import SOLUTION
 from game.inventory import Inventory
 from game.puzzles import validate
@@ -35,6 +36,16 @@ class AbilityTests(unittest.TestCase):
         for key in ("browser", "usb", "credentials"):
             self.assertFalse(self.system.lock_reason(key))
         self.assertEqual(sum(validate(DIGITAL_PUZZLE, i)[0] for i in range(3)), 1)
+
+    def test_ability_button_requirement_matches_inspected_clues(self):
+        class FakeGame:
+            ability_available = AbilityScenes.ability_available
+
+        game = FakeGame()
+        game.abilities = self.system
+        self.assertFalse(game.ability_available("Bianca"))
+        self.system.inspected.add("usb")
+        self.assertTrue(game.ability_available("Bianca"))
 
     def test_all_context_guards_and_duplicates(self):
         for name, ability in ABILITIES.items():

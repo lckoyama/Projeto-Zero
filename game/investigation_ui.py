@@ -278,12 +278,15 @@ class InvestigationUI:
         self.ui_label("FICHA SELECIONADA", 998, 88, CYAN, 190)
         title, category, body, known = self.entry(self.board_selected)
         self.entry_art(self.board_selected, (1025, 124, 132, 150))
-        self.ui_label(title, 998, 289, width=185)
-        self.ui_label(category, 998, 338, CYAN, 185)
-        self.ui_label("Registro disponível" if known else "A investigar", 998, 367, s.GREEN if known else s.MUTED, 185)
-        self.ui_button("Abrir ficha", (998, 409, 184, 35), lambda: self.set_scene("dossier"))
-        self.ui_button("Fixar no mural", (998, 453, 184, 35), self.pin_selected)
-        self.ui_button("Montar hipótese", (998, 497, 184, 35), self.open_theory)
+        title_end = self.ui_label(title, 998, 289, width=185)
+        category_y = max(338, title_end + 8)
+        category_end = self.ui_label(category, 998, category_y, CYAN, 185)
+        status_y = category_end + 8
+        self.ui_label("Registro disponível" if known else "A investigar", 998, status_y,
+                      s.GREEN if known else s.MUTED, 185)
+        button_y = max(409, status_y + 31)
+        self.ui_button("Abrir ficha", (998, button_y, 184, 35), lambda: self.set_scene("dossier"))
+        self.ui_button("Fixar no mural", (998, button_y + 44, 184, 35), self.pin_selected)
         self.ui_label(f"EVIDÊNCIAS  {len(self.inventory.ids):02}/08", 998, 566, CYAN, 185)
         self.ui_label(f"DEDUÇÕES    {self.puzzle_index:02}/08", 998, 594, s.MUTED, 185)
         count = len(self.inventory.ids)
@@ -300,7 +303,6 @@ class InvestigationUI:
             else:
                 self.begin_analysis()
         self.ui_button(label, (998, 665, 184, 42), progress, enabled=ready, active=ready)
-        self.ui_button("Anotações pessoais", (998, 713, 184, 32), self.open_notes)
         if self.save_message:
             self.ui_label(self.save_message, 998, 750, s.MUTED, 185)
 
@@ -347,7 +349,7 @@ class InvestigationUI:
         self.dossier_header("RECONSTRUÇÃO / CONCLUSÃO DO CASO")
         self.ui_label("FORMULE SUA CONCLUSÃO", 60, 110, CYAN, 600)
         self.text("Confronte sua hipótese com as evidências.", x=60, y=150, width=1080)
-        self.ui_label("Escolha cada campo clicando para alternar. O horário deve corresponder ao evento inicial.", 60, 198, s.MUTED, 1080)
+        self.ui_label("Abra a lista de cada campo e escolha uma opção. O horário deve corresponder ao evento inicial.", 60, 198, s.MUTED, 1080)
         person_key = f"person:{self.accusation[0]}"
         self.entry_art(person_key, (60, 270, 260, 330))
         labels = ("PESSOA ENVOLVIDA", "MÉTODO", "EQUIPAMENTO", "HORÁRIO DO EVENTO")
@@ -355,7 +357,20 @@ class InvestigationUI:
             y = 265 + row * 93
             self.ui_label(labels[row], 385, y, CYAN, 740)
             self.ui_button(options[self.accusation[row]] + "   >", (385, y + 27, 745, 43),
-                           lambda value=row: self.change_choice(value))
+                           lambda value=row: self.toggle_final_choice(value),
+                           active=self.final_choice_open == row)
+            if self.final_choice_open == row:
+                item_height = 32
+                list_height = len(options) * item_height + 8
+                list_y = y + 76
+                if list_y + list_height > 700:
+                    list_y = y + 20 - list_height
+                pygame.draw.rect(self.screen, (9, 16, 27), (385, list_y, 745, list_height), border_radius=5)
+                pygame.draw.rect(self.screen, CYAN, (385, list_y, 745, list_height), 1, border_radius=5)
+                for option, label in enumerate(options):
+                    self.ui_button(label, (393, list_y + 4 + option * item_height, 729, 28),
+                                   lambda value=row, selected=option: self.select_final_choice(value, selected),
+                                   active=option == self.accusation[row])
         self.ui_button("Voltar ao mural", (60, 707, 260, 46), lambda: self.set_scene("board"))
         self.ui_button("Validar reconstrução", (385, 707, 350, 46), self.submit,
                        active=True, enabled=self.analysis_done and self.puzzle_index == len(self.puzzles))

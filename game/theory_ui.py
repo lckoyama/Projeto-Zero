@@ -30,9 +30,6 @@ class TheoryUI:
         self.theory_reading = key
         self.theory["submitted"] = False
 
-    def verify_theory(self):
-        self.theory["submitted"] = True
-
     def use_theory(self):
         if (all(status == "supported" for status, _ in self.theory_results())
                 and self.analysis_done and self.puzzle_index == len(self.puzzles)):
@@ -40,7 +37,7 @@ class TheoryUI:
             self.set_scene("conclusion")
 
     def draw_theory(self):
-        self.dossier_header("MURAL / MONTAR A HIPÓTESE")
+        self.dossier_header("MURAL / RECONSTRUÇÃO")
         self.ui_button("Voltar ao mural", (1000, 17, 175, 32), lambda: self.set_scene("board"))
         self.ui_label("Selecione um campo, escolha sua hipótese e associe uma ou mais provas. Clique em Ler para consultar a fonte.", 25, 89, s.MUTED, 1150)
         labels = ["PESSOA", "AÇÃO", "EQUIPAMENTO", "HORÁRIO INICIAL"]
@@ -82,7 +79,6 @@ class TheoryUI:
         self.ui_label(explanation, 545, 620, colors[status], 620)
         ready = all(status == "supported" for status, _ in results)
         finished = self.analysis_done and self.puzzle_index == len(self.puzzles)
-        self.ui_button("Verificar hipótese", (25, 721, 225, 42), self.verify_theory, active=True)
         self.ui_button("Salvar", (265, 721, 105, 42), self.save_game)
         self.ui_button("Levar à conclusão", (895, 721, 280, 42), self.use_theory, enabled=ready and finished)
         self.ui_label(self.save_message or "A conclusão final exige as oito pistas e os oito desafios resolvidos.", 390, 733, s.MUTED, 485)

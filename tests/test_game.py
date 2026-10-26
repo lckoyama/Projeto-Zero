@@ -101,6 +101,9 @@ class GameTests(unittest.TestCase):
             with self.subTest(scene=scene):
                 game.scene = scene
                 game.draw()
+        game.scene = "board"
+        game.draw()
+        self.assertFalse(any(action == game.open_notes for _, action in game.buttons))
         game.handle_event(pygame.event.Event(pygame.QUIT))
         self.assertFalse(game.running)
 
@@ -118,6 +121,16 @@ class GameTests(unittest.TestCase):
         game.show_dialogue("Depoimento", "Conversa com o investigador.")
         game.handle_event(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_e))
         self.assertEqual(game.scene, "world")
+
+    def test_final_conclusion_uses_option_lists(self):
+        game = self.game
+        game.scene = "conclusion"
+        game.draw()
+        game.toggle_final_choice(1)
+        self.assertEqual(game.final_choice_open, 1)
+        game.select_final_choice(1, 2)
+        self.assertEqual(game.accusation[1], 2)
+        self.assertIsNone(game.final_choice_open)
 
 
 if __name__ == "__main__":

@@ -70,6 +70,7 @@ class Game(NotesUI, BoardNavigation, TheoryUI, ComparisonUI, HypothesisUI, Deduc
         self.correct = False
         self.selection = 0
         self.accusation = [0, 0, 0, 0]
+        self.final_choice_open = None
         self.theory = empty_theory()
         self.theory_field = 0
         self.theory_reading = None
@@ -108,6 +109,8 @@ class Game(NotesUI, BoardNavigation, TheoryUI, ComparisonUI, HypothesisUI, Deduc
     def set_scene(self, scene):
         if self.scene == "notes" and scene != "notes":
             pygame.key.stop_text_input()
+        if scene != "conclusion":
+            self.final_choice_open = None
         self.board_panning = False
         if scene != "dossier":
             self.sheet_return = False
@@ -168,6 +171,13 @@ class Game(NotesUI, BoardNavigation, TheoryUI, ComparisonUI, HypothesisUI, Deduc
 
     def change_choice(self, row):
         self.accusation[row] = (self.accusation[row] + 1) % len(self.final_options()[row])
+
+    def toggle_final_choice(self, row):
+        self.final_choice_open = None if self.final_choice_open == row else row
+
+    def select_final_choice(self, row, choice):
+        self.accusation[row] = choice
+        self.final_choice_open = None
 
     def final_options(self):
         return [[person["name"] for person in self.characters],
@@ -242,7 +252,8 @@ class Game(NotesUI, BoardNavigation, TheoryUI, ComparisonUI, HypothesisUI, Deduc
         for person in self.characters:
             color = s.GREEN if person["name"] in self.talked else s.BLUE
             active = target and target[0] == "person" and target[1] is person
-            self.character_art.draw_marker(self.screen, person["name"], person["pos"], color, active)
+            self.character_art.draw_marker(self.screen, person["name"], person["pos"], color, active,
+                                           investigated=person["name"] in self.talked)
             if active:
                 self.draw_target_label(person["name"], person["pos"], color)
         for item in self.evidence + [self.computer]:
@@ -326,6 +337,8 @@ class Game(NotesUI, BoardNavigation, TheoryUI, ComparisonUI, HypothesisUI, Deduc
             fill = (24, 47, 61) if current else (19, 29, 43)
             border = s.GREEN if current else (55, 76, 96)
             pygame.draw.rect(self.screen, fill, card, border_radius=8)
+            art_rect = card.inflate(-4, -4)
+            self.bank.art.draw(self.screen, index, art_rect, fill=True)
             pygame.draw.rect(self.screen, border, card, 2, border_radius=8)
 
             title = self.small.render(name, True, s.GREEN if current else s.TEXT)
@@ -335,10 +348,6 @@ class Game(NotesUI, BoardNavigation, TheoryUI, ComparisonUI, HypothesisUI, Deduc
             self.screen.blit(title, (card.x + 20, card.y + 17))
             if current:
                 self.ui_label("VOCÊ ESTÁ AQUI", card.right - 126, card.y + 18, s.GREEN, 112)
-
-            art_rect = pygame.Rect(card.x + 15, card.y + 51, 190, 158)
-            pygame.draw.rect(self.screen, (11, 17, 27), art_rect, border_radius=5)
-            self.bank.art.draw(self.screen, index, art_rect)
 
             people = [person["name"] for person in self.characters if person["room"] == index]
             room_evidence = []
@@ -387,7 +396,7 @@ class Game(NotesUI, BoardNavigation, TheoryUI, ComparisonUI, HypothesisUI, Deduc
                       "No mural, arraste fichas e use Ligar fichas para conectar duas hipóteses. Use o catálogo lateral para consultar pessoas, itens, locais e pistas.\n"
                       "Clique em Explorar banco para entrar nas salas pelas portas do corredor. Reúna oito pistas e volte com J para resolver os desafios.\n\n"
                       "Na mesa de dedução, clique numa lacuna e escolha uma opção (1–4). Tab muda de campo; Enter verifica e continua após o resultado.\n"
-                      "Símbolos: ¬ não; ∧ e; ∨ ou inclusivo; → se... então; ↔ se e somente se.\n\n"
+                      "Símbolos: ¬ não; & e; | ou inclusivo; → se... então; ↔ se e somente se.\n\n"
                       "Nos diálogos, use H ou o botão para consultar a habilidade. Examine os objetos solicitados antes de ativá-la.\n"
                       "Salve pelo botão Salvar no mural ou pela pausa no banco. Carregue pelo menu ou pela pausa.", y=140)
             self.button("Voltar ao menu", (60, 710, 300, 56), lambda: self.set_scene("menu"))
@@ -408,7 +417,8 @@ class Game(NotesUI, BoardNavigation, TheoryUI, ComparisonUI, HypothesisUI, Deduc
                 ability = ABILITIES[self.active_person]
                 self.text(ability["name"] + " — " + ability["description"],
                           x=text_x, y=520, width=text_width, color=s.BLUE)
-                self.button("Consultar habilidade [H]", (60, 625, 500, 56), self.open_ability)
+                self.button("Consultar habilidade [H]", (60, 625, 500, 56), self.open_ability,
+                            enabled=self.ability_available(self.active_person))
             self.button("Continuar [E / Enter]", (60, 710, 430, 56), lambda: self.set_scene("world"))
         elif self.scene == "ability":
             self.draw_ability()
