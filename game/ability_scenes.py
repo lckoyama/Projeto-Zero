@@ -14,6 +14,8 @@ class AbilityScenes:
         return ABILITIES[name]["requires"] <= self.abilities.inspected
 
     def ability_puzzle(self, name):
+        if name == "Bianca":
+            return DIGITAL_PUZZLE
         if name == "Márcia":
             return self.puzzles[5]
         if name == "Carlos":
@@ -26,16 +28,25 @@ class AbilityScenes:
             self.scene = "ability"
 
     def use_ability(self, choice=None):
-        person = next((p for p in CHARACTERS if p["name"] == self.active_person), None)
+        person = next((p for p in self.characters if p["name"] == self.active_person), None)
         if person is None:
             return
         if person["name"] not in self.talked:
             self.ability_success = False
             self.ability_feedback = "Converse com a pessoa antes de utilizar esta habilidade."
             return
+        room = next((i for i, rect in enumerate(self.bank.rooms)
+                     if rect.collidepoint(self.player.rect.center)), None)
+        nearby = pygame.Vector2(person["pos"]).distance_to(self.player.rect.center) <= 66
+        if (not nearby or room != ABILITIES[person["name"]]["room"]
+                or not self.ability_available(person["name"]) or person["name"] in self.abilities.used):
+            self.ability_success = False
+            self.ability_feedback = "Aproxime-se na sala correta, examine os pré-requisitos e use uma habilidade pendente."
+            return
         legacy_activation = person["name"] != "Bianca" and (
             choice is None or isinstance(choice, str))
-        if person["name"] != "Bianca" and person["name"] in ABILITY_CHALLENGES and not legacy_activation:
+        logical_attempt = type(choice) is int
+        if person["name"] == "Bianca" or not legacy_activation:
             puzzle = self.ability_puzzle(person["name"])
             if type(choice) is not int or not 0 <= choice < len(puzzle["options"]):
                 self.ability_success = False
@@ -43,17 +54,23 @@ class AbilityScenes:
                 return
             correct, detail = validate(puzzle, choice)
             if not correct:
+                self.score.answer("ability:" + person["name"], False)
                 self.ability_success = False
                 self.ability_feedback = "Revise a inferência. " + detail
                 return
-        room = next((i for i, rect in enumerate(self.bank.rooms)
-                     if rect.collidepoint(self.player.rect.center)), None)
-        nearby = pygame.Vector2(person["pos"]).distance_to(self.player.rect.center) <= 66
         activation_choice = choice if person["name"] == "Bianca" or (
             person["name"] == "Jonas" and isinstance(choice, str)) else None
+        if person["name"] == "Jonas" and logical_attempt:
+            activation_choice = "20h45"
         success, self.ability_feedback = self.abilities.activate(
             person["name"], room, nearby, self.inventory, activation_choice)
         self.ability_success = success
+        if success and logical_attempt:
+            self.score.answer("ability:" + person["name"], True)
+
+    def request_ability_hint(self):
+        if self.active_person not in self.abilities.used:
+            self.score.hint("ability:" + self.active_person)
 
     def draw_ability(self):
         ability = ABILITIES[self.active_person]
@@ -78,6 +95,13 @@ class AbilityScenes:
                             lambda i=index: self.use_ability(i))
         if self.ability_feedback and not used:
             self.text(self.ability_feedback, y=435, color=s.GREEN if self.ability_success else s.RED)
+        if not used:
+            hint_key = "ability:" + self.active_person
+            self.button("Pedir dica (-5 pts)", (60, 610, 270, 40), self.request_ability_hint,
+                        enabled=hint_key not in self.score.hints)
+            if hint_key in self.score.hints:
+                self.text(self.ability_puzzle(self.active_person)["explanation"], y=525, small=True)
+        self.text(f"Pontuação: {self.score.points}", x=870, y=710, width=280, small=True)
         self.button("Voltar ao banco", (60, 710, 350, 56), lambda: self.set_scene("world"))
 
     def draw_ability_records(self):
@@ -105,7 +129,7 @@ class AbilityScenes:
     def load_game(self):
         try:
             load_progress(self)
-            self.set_scene("board")
+            self.set_scene(self.score.outcome or "board")
             self.message = "Progresso carregado. Evidências e habilidades restauradas."
         except FileNotFoundError:
             self.save_message = "Nenhuma partida salva foi encontrada."

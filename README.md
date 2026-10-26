@@ -14,6 +14,40 @@ ou
 
 Se o ambiente Python já estiver ativado, use `python main.py`. Na primeira execução, crie o ambiente e instale as dependências seguindo a seção [Executar no VS Code](#executar-no-vs-code).
 
+## Pontuação e requisitos acadêmicos
+
+A partida começa com **100 pontos**. A coleta de cada uma das oito evidências concede **+10**, inclusive quando uma habilidade entrega o laudo automaticamente. Um desafio lógico correto na primeira tentativa concede **+20**; uma resposta incorreta custa **10 pontos**; pedir uma dica custa **5 pontos**. Acertar depois de errar conclui o desafio, mas não recebe o bônus de primeira tentativa. Campos ainda vazios não contam como uma resposta.
+
+Essas regras também se aplicam aos sete desafios de autorização das habilidades: cada habilidade e cada uma das oito deduções tem um identificador próprio. Assim, uma partida perfeita pela interface pode atingir **530 pontos**: 100 iniciais + 80 por evidências + 160 pelas oito deduções + 140 pelas sete habilidades + 50 pela conclusão. A reabertura de laudos, habilidades e desafios concluídos não repete os bônus. Os caminhos de ativação direta preservados para compatibilidade não concedem bônus por uma resposta lógica que não foi apresentada.
+
+**Pedir dica** está disponível nas deduções e nas habilidades pendentes. Cada desafio possui uma dica; ela permanece disponível para releitura, inclusive após carregar, sem outra cobrança. A dica explica a regra ou o raciocínio e pode revelar a resposta. Consultá-la não conta como tentativa incorreta.
+
+Após reunir as oito evidências e concluir as oito deduções, use **Apresentar conclusão → Arriscar solução final**. Uma conclusão correta concede **+50** uma única vez. Uma acusação incorreta custa **20 pontos** e abre a tela de derrota. **Revisar conclusão** permite uma nova tentativa, com a mesma investigação; cada nova acusação incorreta é penalizada, inclusive se repetir a combinação. Cliques duplicados enquanto o resultado está aberto não repetem a cobrança. Pontuação negativa não apaga a investigação nem impede recuperação.
+
+O mural e o banco exibem a pontuação. As telas de vitória e derrota mostram pontos, acertos, erros, dicas, evidências, deduções e habilidades concluídas, além de **Nova partida**, **Salvar resultado** e retorno ao menu. Acertos incluem desafios lógicos corretos (mesmo após erro) e a primeira conclusão correta; erros incluem respostas lógicas e acusações incorretas. Deduções concluídas continuam contadas separadamente, de 0 a 8.
+
+O salvamento registra o histórico que permite recalcular a pontuação, tentativas, dicas e resultado, além do progresso já existente. Arquivos antigos sem estatísticas continuam aceitos: começam com 100 pontos, sem atribuir acertos, erros ou bônus retroativos desconhecidos; evidências e desafios já concluídos não podem render novamente. Carregar um resultado salvo reabre a tela correspondente.
+
+### Demonstração fixa e provas para os slides
+
+O botão **Demonstração / Seu Antônio** inicia o caso `link`, revisão 2. Também é possível abrir diretamente:
+
+```sh
+./.venv/bin/python main.py --demo
+```
+
+Nesse caso, Seu Antônio abre acidentalmente um link malicioso no celular às **20h35**, durante a pausa no lazer; a perícia vincula o evento ao comprometimento de credenciais, e o acesso externo é detectado às **21h07**. Ele desencadeou o incidente involuntariamente. O botão normal **Iniciar investigação** mantém o sorteio dos quatro casos. Os identificadores históricos permanecem: `usb` corresponde à sabotagem de Jonas, `extension` à falha de configuração de Márcia e `phishing` ao transmissor de Carlos. Revisões antigas de salvamentos mantêm suas próprias histórias.
+
+Cada caso tem **dez proposições A–J**, premissas com identificação e transcrição das fontes, etapas intermediárias e conclusão. A prova usa **Modus Ponens**, **Modus Tollens**, **introdução da conjunção**, **De Morgan e dupla negação**, verificadas pelo motor existente. O verificador rejeita premissas alteradas, fontes de outro caso, referências futuras e regras incompatíveis; também testa satisfatibilidade para impedir uma prova por premissas contraditórias. No caso do transmissor de Carlos, a exclusão por Modus Tollens se refere ao notebook, não ao transmissor.
+
+Depois da vitória, **Ver prova / slides** oferece uma leitura paginada, incluindo as fontes e a interpretação narrativa. As versões textuais das quatro histórias atuais estão em [docs/provas](docs/provas). Para regenerá-las sem abrir a janela:
+
+```sh
+./.venv/bin/python main.py --export-proofs docs/provas
+```
+
+As premissas causais são as perícias fictícias já presentes no jogo. O motor verifica suas consequências, não a autenticidade de um laudo nem uma culpa real. Os fatos auxiliares contextualizam os acontecimentos; conexão Wi-Fi, profissão e sequência temporal não são provas isoladas de autoria. A escolha final cruza pessoa, método, equipamento e horário nos registros da história atual.
+
 ## Referência visual do projeto
 
 ![Referência visual de Protocolo Zero, com os sete personagens, os itens de investigação e as seis salas do banco](assets/reference/protocolo-zero.png)

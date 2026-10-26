@@ -288,7 +288,8 @@ class InvestigationUI:
         self.ui_button("Abrir ficha", (998, button_y, 184, 35), lambda: self.set_scene("dossier"))
         self.ui_button("Fixar no mural", (998, button_y + 44, 184, 35), self.pin_selected)
         self.ui_label(f"EVIDÊNCIAS  {len(self.inventory.ids):02}/08", 998, 566, CYAN, 185)
-        self.ui_label(f"DEDUÇÕES    {self.puzzle_index:02}/08", 998, 594, s.MUTED, 185)
+        self.ui_label(f"DEDUÇÕES    {self.puzzle_index:02}/08", 998, 588, s.MUTED, 185)
+        self.ui_label(f"PONTUAÇÃO   {self.score.points}", 998, 610, s.GREEN, 185)
         count = len(self.inventory.ids)
         for index in range(8):
             pygame.draw.rect(self.screen, CYAN if index < count else EDGE, (998 + index * 23, 631, 18, 4))
@@ -350,6 +351,7 @@ class InvestigationUI:
         self.ui_label("FORMULE SUA CONCLUSÃO", 60, 110, CYAN, 600)
         self.text("Confronte sua hipótese com as evidências.", x=60, y=150, width=1080)
         self.ui_label("Abra a lista de cada campo e escolha uma opção. O horário deve corresponder ao evento inicial.", 60, 198, s.MUTED, 1080)
+        self.ui_label("Acusação: +50 no acerto; -20 no erro. Seu progresso é preservado.", 385, 230, s.MUTED, 745)
         person_key = f"person:{self.accusation[0]}"
         self.entry_art(person_key, (60, 270, 260, 330))
         labels = ("PESSOA ENVOLVIDA", "MÉTODO", "EQUIPAMENTO", "HORÁRIO DO EVENTO")
@@ -360,7 +362,7 @@ class InvestigationUI:
                            lambda value=row: self.toggle_final_choice(value),
                            active=self.final_choice_open == row)
         self.ui_button("Voltar ao mural", (60, 707, 260, 46), lambda: self.set_scene("board"))
-        self.ui_button("Validar reconstrução", (385, 707, 350, 46), self.submit,
+        self.ui_button("Arriscar solução final", (385, 707, 350, 46), self.submit,
                        active=True, enabled=self.analysis_done and self.puzzle_index == len(self.puzzles))
 
         if self.final_choice_open is not None:
@@ -397,7 +399,8 @@ class InvestigationUI:
         self.ui_button("Carregar partida", (260, 583, 194, 40), self.load_game)
         self.ui_button("Instruções", (54, 637, 194, 36), lambda: self.set_scene("instructions"))
         self.ui_button("Sair", (260, 637, 194, 36), lambda: setattr(self, "running", False))
-        self.ui_label(self.save_message, 54, 698, s.MUTED, 440)
+        self.ui_button("Demonstração / Seu Antônio", (54, 681, 400, 36), self.start_demo)
+        self.ui_label(self.save_message, 54, 724, s.MUTED, 440)
         # Composição editorial com os próprios assets, sem relações pré-julgadas.
         pygame.draw.rect(self.screen, (14, 22, 32), (520, 100, 638, 611), border_radius=8)
         self.bank.art.draw(self.screen, 0, (560, 130, 550, 300))

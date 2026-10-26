@@ -22,9 +22,11 @@ from game.theory_ui import TheoryUI
 from game.theory import empty_theory
 from game.board_navigation import BoardNavigation
 from game.notes_ui import NotesUI
+from game.scoring import Score
+from game.results_ui import ResultsUI
 
 
-class Game(NotesUI, BoardNavigation, TheoryUI, ComparisonUI, HypothesisUI, DeductionUI, InvestigationUI, AbilityScenes):
+class Game(ResultsUI, NotesUI, BoardNavigation, TheoryUI, ComparisonUI, HypothesisUI, DeductionUI, InvestigationUI, AbilityScenes):
     def __init__(self):
         pygame.init()
         self.screen = pygame.display.set_mode((s.WIDTH, s.HEIGHT))
@@ -44,6 +46,7 @@ class Game(NotesUI, BoardNavigation, TheoryUI, ComparisonUI, HypothesisUI, Deduc
         pygame.key.stop_text_input()
         self.case = build_case(case_id, revision)
         self.case_id = self.case["id"]
+        self.demo_mode = False
         for field in ("characters", "evidence", "computer", "puzzles", "sheets", "topics"):
             setattr(self, field, self.case[field])
         self.bank = BankMap()
@@ -53,7 +56,9 @@ class Game(NotesUI, BoardNavigation, TheoryUI, ComparisonUI, HypothesisUI, Deduc
         self.setup_board_ui()
         self.active_item = None
         self.player = Player()
-        self.inventory = Inventory()
+        self.proof_page = 0
+        self.score = Score()
+        self.inventory = Inventory(self.score.find_evidence)
         self.abilities = AbilitySystem(self.case["ability_results"])
         self.active_person = None
         self.record_person = "Seu Antônio"
@@ -80,6 +85,16 @@ class Game(NotesUI, BoardNavigation, TheoryUI, ComparisonUI, HypothesisUI, Deduc
         self.reset(choose_case())
         self.has_game = True
         self.scene = "intro"
+
+    def start_demo(self):
+        self.reset("link")
+        self.demo_mode = True
+        self.has_game = True
+        self.scene = "intro"
+
+    def retry_conclusion(self):
+        self.score.outcome = None
+        self.set_scene("conclusion")
 
     def text(self, text, x=60, y=100, width=1080, color=s.TEXT, small=False):
         return draw_text(self.screen, text, self.small if small else self.font, x, y, width, color)
@@ -187,7 +202,13 @@ class Game(NotesUI, BoardNavigation, TheoryUI, ComparisonUI, HypothesisUI, Deduc
 
     def submit(self):
         if self.analysis_done and self.puzzle_index == len(self.puzzles):
-            self.scene = "victory" if self.accusation == self.case["answer"] else "error"
+            if (self.scene in ("victory", "error") and self.score.outcome is not None
+                    and tuple(self.accusation) == self.score.last_accusation):
+                self.set_scene(self.score.outcome)
+                return
+            correct = self.accusation == self.case["answer"]
+            self.score.accuse(self.accusation, correct)
+            self.set_scene("victory" if correct else "error")
 
     def handle_event(self, event):
         if self.scene == "notes" and self.notes_event(event):
@@ -216,7 +237,7 @@ class Game(NotesUI, BoardNavigation, TheoryUI, ComparisonUI, HypothesisUI, Deduc
                 elif self.scene == "dossier" and self.sheet_return:
                     self.sheet_return = False
                     self.scene = "puzzle"
-                elif self.scene in ("puzzle", "conclusion", "error", "dossier", "timeline", "relation", "comparison", "theory"):
+                elif self.scene in ("puzzle", "conclusion", "error", "dossier", "timeline", "relation", "comparison", "theory", "proof"):
                     self.scene = "board"
                 elif self.scene == "instructions":
                     self.scene = "menu"
@@ -268,7 +289,7 @@ class Game(NotesUI, BoardNavigation, TheoryUI, ComparisonUI, HypothesisUI, Deduc
                 self.draw_target_label(item.get("object", "Registro"), item["pos"], s.GREEN if collected else s.GOLD)
         self.player.draw(self.screen)
         self.text("PROTOCOLO ZERO", 46, 19, 300, color=s.CYAN)
-        self.text("FASE 2 / INVESTIGAÇÃO", 430, 19, 250, s.TEXT, small=True)
+        self.text(f"INVESTIGAÇÃO / {self.score.points} PONTOS", 390, 28, 300, s.TEXT, small=True)
         progress = pygame.Rect(700, 18, 465, 38)
         pygame.draw.rect(self.screen, s.PANEL, progress, border_radius=7)
         pygame.draw.rect(self.screen, s.EDGE, progress, 1, border_radius=7)
@@ -402,7 +423,9 @@ class Game(NotesUI, BoardNavigation, TheoryUI, ComparisonUI, HypothesisUI, Deduc
             self.button("Voltar ao menu", (60, 710, 300, 56), lambda: self.set_scene("menu"))
         elif self.scene == "intro":
             self.title("Fase 1 / O incidente")
-            self.text(self.case["intro"] + "\n\nA solução é sorteada a cada nova investigação. Leia os laudos desta partida; carregar preserva o mesmo caso.", y=180)
+            mode = ("Demonstração acadêmica: caso fixo de Seu Antônio."
+                    if self.demo_mode else "A solução é sorteada a cada nova investigação.")
+            self.text(self.case["intro"] + "\n\n" + mode + " Leia os laudos desta partida; carregar preserva o mesmo caso.", y=180)
             self.button("Abrir investigação [Enter]", (60, 550, 440, 60), lambda: self.set_scene("board"))
         elif self.scene == "dialogue":
             self.title(self.dialogue_title)
@@ -454,19 +477,10 @@ class Game(NotesUI, BoardNavigation, TheoryUI, ComparisonUI, HypothesisUI, Deduc
             self.button("Salvar progresso", (60, 440, 450, 60), self.save_game)
             self.button("Carregar partida salva", (60, 520, 450, 60), self.load_game)
             self.text(self.save_message, y=610)
-        elif self.scene == "error":
-            self.title("Hipótese ainda não sustentada")
-            self.text("A combinação escolhida não corresponde ao conjunto dos laudos. Revise as evidências, "
-                      "separe o evento inicial da detecção e considere o vínculo causal pericial. "
-                      "Seu progresso nos desafios foi preservado.", y=180)
-            self.button("Revisar conclusão", (60, 420, 460, 60), lambda: self.set_scene("conclusion"))
-            self.button("Voltar às evidências", (60, 500, 460, 60), lambda: self.set_scene("inventory"))
-        elif self.scene == "victory":
-            self.title("Caso resolvido / " + self.case["title"], "PROTOCOLO ZERO • RECONSTRUÇÃO FINAL")
-            y = self.text(self.case["solution"], y=125, color=s.GREEN) + 20
-            for index, step in enumerate(self.case["reasoning"]):
-                y = self.text(f"{index + 1}. {step}", y=y, small=True) + 7
-            self.button("Menu inicial", (60, 725, 300, 56), lambda: self.set_scene("menu"))
+        elif self.scene in ("error", "victory"):
+            self.draw_result(self.scene == "victory")
+        elif self.scene == "proof":
+            self.draw_proof()
 
     def run(self):
         """Processa eventos continuamente, inclusive em diálogos, a até 60 FPS."""

@@ -1,0 +1,96 @@
+PROVA / O link na sala de lazer / caso link / revisão 2
+Os registros são premissas da ficção pedagógica. A verificação testa a dedução, não autentica laudos reais. A resposta final exige cruzar pessoa, método, equipamento e horário nas fontes, não apenas descartar suspeitos.
+
+DEZ PROPOSIÇÕES / A–J
+A: Ocorreu o evento do link preservado no histórico.
+B: Esse evento comprometeu credenciais.
+C: Este transmissor transmitiu os dados do incidente.
+D: A assinatura deste transmissor está no registro do incidente.
+E: O celular de Seu Antônio estava conectado ao Wi-Fi na pausa.
+
+DEZ PROPOSIÇÕES / A–J
+F: O histórico registra a abertura do link do celular às 20h35.
+G: O banco detectou o incidente às 21h07.
+H: Bianca usou o pendrive em um teste autorizado às 20h20.
+I: Arthur usou o notebook na apresentação de 19h50 a 20h30.
+J: As câmeras corroboram a presença de Arthur na apresentação.
+
+PREMISSAS INICIAIS
+1. A / fontes: browser, credentials
+2. (A → B) / fontes: credentials
+3. (C → D) / fontes: transmitter
+4. ¬D / fontes: transmitter
+5. E / fontes: wifi
+6. F / fontes: browser
+7. G / fontes: access
+8. H / fontes: usb
+9. I / fontes: laptop
+10. J / fontes: cameras
+
+ETAPAS INTERMEDIÁRIAS E CONCLUSÃO
+11. B / Modus Ponens / linhas 1, 2
+12. ¬C / Modus Tollens / linhas 3, 4
+13. (A & B) / Introdução da conjunção / linhas 1, 11
+14. ¬(¬A | ¬B) / De Morgan e dupla negação / linhas 13
+15. ((A & B) & ¬C) / Introdução da conjunção / linhas 13, 12
+Verificação: premissas satisfatíveis; zero contraexemplos para cada passo e para a conclusão.
+
+INTERPRETAÇÃO DA RECONSTRUÇÃO
+Seu Antônio abriu acidentalmente um link malicioso às 20h35, na sala de lazer, usando um celular conectado ao Wi-Fi da empresa. O evento comprometeu credenciais, posteriormente utilizadas por criminosos externos. O banco identificou o acesso indevido às 21h07. Seu Antônio desencadeou o incidente involuntariamente; não foi o autor intencional do ataque.
+A e B descrevem o evento e sua consequência pericial; ¬C exclui somente o equipamento alternativo definido neste caso. E–J contextualizam e corroboram os registros. Não se infere intenção ou culpa de profissão, presença ou sequência de horários.
+
+LEITURA DAS EVIDÊNCIAS
+Wi-Fi e navegador associam o celular ao evento das 20h35; as câmeras corroboram o local.
+A perícia vincula o evento ao comprometimento: P e P → Q permitem Q (Modus Ponens).
+O registro vincula as credenciais comprometidas ao acesso externo detectado às 21h07.
+
+LEITURA DAS EVIDÊNCIAS
+Pendrive: arquivos de teste autorizados, sem vínculo com o incidente na análise técnica.
+Notebook: apresentação de 19h50 a 20h30, corroborada pelo registro e pela perícia.
+Transmissor: encontrado às 21h15; a análise o excluiu deste incidente.
+
+LEITURA DAS EVIDÊNCIAS
+Rede interna: a auditoria excluiu a falha proposta; conectar-se ao Wi-Fi não prova falha.
+Computador interno: consulta de relatórios às 20h45 sem vínculo técnico com o ataque.
+A causalidade vem das premissas periciais fictícias, nunca apenas da ordem dos horários.
+
+FONTE DA PREMISSA 1: A
+Registro do evento, com as definições do tópico pericial do caso.
+browser: O histórico preservado do celular registra a abertura de um link às 20h35. O endereço foi classificado como malicioso pela perícia. É preciso relacionar o evento ao laudo de credenciais.
+credentials: Premissa pericial fictícia: se o evento do link registrado no celular ocorreu (P), então ele comprometeu credenciais (Q). A perícia correlacionou o identificador do evento à captura das credenciais. A auditoria excluiu a hipótese de falha na rede interna neste caso.
+
+FONTE DA PREMISSA 2: (A → B)
+Correlação causal declarada no laudo; não decorre apenas do horário.
+credentials: Premissa pericial fictícia: se o evento do link registrado no celular ocorreu (P), então ele comprometeu credenciais (Q). A perícia correlacionou o identificador do evento à captura das credenciais. A auditoria excluiu a hipótese de falha na rede interna neste caso.
+
+FONTE DA PREMISSA 3: (C → D)
+Condição técnica da assinatura fornecida pelo laudo do equipamento.
+transmitter: Encontrado às 21h15. Premissas da perícia: se este aparelho transmitiu os dados do incidente (T), deixou a assinatura A (T → A). A assinatura está ausente (¬A). A análise excluiu este aparelho, não todo transmissor possível.
+
+FONTE DA PREMISSA 4: ¬D
+Ausência da assinatura no mesmo laudo.
+transmitter: Encontrado às 21h15. Premissas da perícia: se este aparelho transmitiu os dados do incidente (T), deixou a assinatura A (T → A). A assinatura está ausente (¬A). A análise excluiu este aparelho, não todo transmissor possível.
+
+FONTE DA PREMISSA 5: E
+Fato registrado; não implica culpa nem causalidade isoladamente.
+wifi: O registro associa o celular de Seu Antônio ao Wi-Fi da empresa durante sua pausa na sala de lazer. A conexão isolada não demonstra uma invasão.
+
+FONTE DA PREMISSA 6: F
+Fato registrado; não implica culpa nem causalidade isoladamente.
+browser: O histórico preservado do celular registra a abertura de um link às 20h35. O endereço foi classificado como malicioso pela perícia. É preciso relacionar o evento ao laudo de credenciais.
+
+FONTE DA PREMISSA 7: G
+Fato registrado; não implica culpa nem causalidade isoladamente.
+access: O banco identificou o acesso indevido às 21h07. O registro pericial vincula esse acesso de criminosos externos às credenciais comprometidas. Esse horário é o da identificação, não o da abertura do link.
+
+FONTE DA PREMISSA 8: H
+Fato registrado; não implica culpa nem causalidade isoladamente.
+usb: Bianca utilizou o pendrive às 20h20. A autorização e a perícia confirmam arquivos de teste autorizados e ausência de vínculo com este incidente. A autorização sozinha não seria prova de inocuidade.
+
+FONTE DA PREMISSA 9: I
+Fato registrado; não implica culpa nem causalidade isoladamente.
+laptop: Arthur utilizou o notebook de 19h50 a 20h30 numa apresentação institucional. Registro da reunião e perícia do equipamento excluem seu uso como vetor deste incidente.
+
+FONTE DA PREMISSA 10: J
+Fato registrado; não implica culpa nem causalidade isoladamente.
+cameras: As câmeras corroboram os eventos fornecidos no caso: notebook na reunião, pendrive autorizado e pausa de Seu Antônio na sala de lazer. Não revelam o conteúdo de uma tela nem demonstram causalidade. A grade completa de movimentações do grupo ainda não foi fornecida.

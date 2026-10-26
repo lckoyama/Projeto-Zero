@@ -8,6 +8,7 @@ from game.evidence import EVIDENCE
 from game.puzzles import PUZZLES
 from game.board import BoardState
 from game.theory import restore_theory
+from game.scoring import Score
 
 SAVE_PATH = Path(__file__).resolve().parent.parent / "saves" / "progress.json"
 
@@ -15,6 +16,9 @@ SAVE_PATH = Path(__file__).resolve().parent.parent / "saves" / "progress.json"
 def save_progress(game, path=SAVE_PATH):
     """Grava primeiro um temporário e substitui o arquivo apenas ao concluir."""
     path = Path(path)
+    # Integrações antigas podem preencher ids diretamente, sem collect().
+    for evidence_id in sorted(game.inventory.ids - game.score.evidence):
+        game.score.find_evidence(evidence_id)
     data = {
         "version": 1, "case_id": game.case_id, "case_revision": game.case["revision"], "evidence": sorted(game.inventory.ids),
         "talked": sorted(game.talked), "inspected": sorted(game.abilities.inspected),
@@ -23,6 +27,7 @@ def save_progress(game, path=SAVE_PATH):
         "position": list(game.player.rect.topleft), "accusation": game.accusation,
         "board": game.board.export(),
         "theory": game.theory,
+        "scoring": game.score.export(),
     }
     temporary = path.with_suffix(".tmp")
     try:
@@ -86,9 +91,27 @@ def load_progress(game, path=SAVE_PATH):
         raise ValueError("Seleção de conclusão inválida.")
     board = BoardState.restore(data.get("board"), evidence, case["topics"])
     theory = restore_theory(data.get("theory"), game.final_options(), evidence, inspected)
+    challenge_ids = {f"sheet:{i}" for i in range(len(case["puzzles"]))} | {f"ability:{name}" for name in ABILITIES}
+    if "scoring" in data:
+        score = Score.restore(data["scoring"], evidence_ids, challenge_ids,
+                              [len(options) for options in game.final_options()], case["answer"])
+        completed = {f"sheet:{i}" for i in range(index)}
+        possible = completed | ({f"sheet:{index}"} if index < len(case["puzzles"]) else set())
+        solved_sheets = {key for key in score.solved if key.startswith("sheet:")}
+        solved_abilities = {key.split(":", 1)[1] for key in score.solved if key.startswith("ability:")}
+        if (score.evidence != evidence or not solved_sheets <= possible
+                or not solved_abilities <= used
+                or score.outcome is not None and (not analysis or index != len(case["puzzles"]))):
+            raise ValueError("Estatísticas inconsistentes com o progresso.")
+    else:
+        # Não é possível reconstruir tentativas antigas: inicia em 100, sem
+        # bônus retroativos, e bloqueia recompensas pelo progresso já obtido.
+        score = Score(evidence, {f"sheet:{i}" for i in range(index)} | {f"ability:{name}" for name in used})
     # Só modifica o jogo depois de validar todos os campos.
     game.reset(case["id"], case["revision"])
     game.inventory.ids, game.talked = evidence, talked
+    game.score = score
+    game.inventory.on_collect = score.find_evidence
     game.abilities.inspected, game.abilities.used = inspected, used
     game.abilities.records = records
     game.analysis_done, game.puzzle_index = analysis, index
@@ -99,4 +122,4 @@ def load_progress(game, path=SAVE_PATH):
     game.board = board
     game.theory = theory
     game.has_game = True
-    game.scene = "world"
+    game.scene = score.outcome or "world"

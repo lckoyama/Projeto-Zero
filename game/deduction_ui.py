@@ -35,8 +35,16 @@ class DeductionUI:
     def check_sheet(self):
         if self.feedback:
             return
+        if None in self.sheet_answers:
+            return
         self.correct, explanation = validate_sheet(self.puzzle_index, self.puzzles[self.puzzle_index], self.sheet_answers)
+        self.score.answer(f"sheet:{self.puzzle_index}", self.correct)
         self.feedback = ("Dedução validada. " if self.correct else "Revise sua dedução. ") + explanation
+
+    def request_hint(self):
+        if self.feedback or self.puzzle_index >= len(self.puzzles):
+            return
+        self.score.hint(f"sheet:{self.puzzle_index}")
 
     def sheet_keyboard(self, key):
         if key == pygame.K_RETURN:
@@ -54,7 +62,7 @@ class DeductionUI:
         self.dossier_header("MESA DE DEDUÇÃO / LÓGICA MATEMÁTICA")
         self.ui_button("Voltar ao mural", (1000, 17, 175, 32), lambda: self.set_scene("board"))
         self.text(sheet["title"], x=25, y=84, width=1000, color=CYAN)
-        self.ui_label(f"{self.puzzle_index}/8 resolvidos", 1020, 89, s.MUTED, 170)
+        self.ui_label(f"{self.puzzle_index}/8 • {self.score.points} pts", 1000, 89, s.MUTED, 190)
         panels = [(24, 133, 334, 438), (374, 133, 468, 438), (858, 133, 318, 438)]
         for rect in panels:
             pygame.draw.rect(self.screen, (15, 24, 36), rect, border_radius=4)
@@ -106,6 +114,11 @@ class DeductionUI:
             self.ui_label("EXERCÍCIO FORMAL", 874, 200, s.MUTED, 285)
             self.ui_label(sheet["note"], 874, 243, s.TEXT, 285)
             self.ui_label("¬  negação\n&  conjunção\n|  disjunção inclusiva\n→  condicional\n↔  bicondicional", 874, 389, CYAN, 285)
+        hint_key = f"sheet:{self.puzzle_index}"
+        if not self.feedback:
+            self.ui_button("Dica exibida" if hint_key in self.score.hints else "Pedir dica (-5 pts)",
+                           (40, 532, 300, 29), self.request_hint,
+                           enabled=hint_key not in self.score.hints)
         pygame.draw.rect(self.screen, (15, 24, 36), (24, 587, 1152, 189), border_radius=4)
         if self.feedback:
             self.ui_label("RESULTADO DA VERIFICAÇÃO", 42, 603, s.GREEN if self.correct else s.RED, 1080)
@@ -118,8 +131,9 @@ class DeductionUI:
             for index, (label, _) in enumerate(choices):
                 self.ui_button(f"{index + 1}. {label}", (42 + index * 279, 647, 265, 47),
                                lambda i=index: self.choose_sheet_token(i))
-            self.ui_label("Clique no campo e depois na opção. Teclas 1–4: escolher / Tab: próximo campo / Enter: verificar.",
-                          42, 733, s.MUTED, 1100)
+            hint = (self.puzzles[self.puzzle_index]["explanation"] if hint_key in self.score.hints
+                    else "Clique no campo e depois na opção. Teclas 1–4: escolher / Tab: próximo campo / Enter: verificar.")
+            self.ui_label(hint, 42, 710, s.MUTED, 1100)
 
     def open_sheet_source(self, key):
         self.sheet_return = True
