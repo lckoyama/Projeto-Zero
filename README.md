@@ -52,7 +52,7 @@ As premissas causais são as perícias fictícias já presentes no jogo. O motor
 
 ![Referência visual de Protocolo Zero, com os sete personagens, os itens de investigação e as seis salas do banco](assets/reference/protocolo-zero.png)
 
-Referência para a identidade visual, os personagens e os ambientes. As seis salas utilizam as ilustrações fornecidas, exibidas no cenário e no mapa (M). Os sete personagens possuem miniaturas no cenário e retratos maiores nos diálogos. Os cinco equipamentos possuem imagens no cenário e na inspeção; as evidências correspondentes também mostram essas imagens no inventário. O investigador controlável e os registros sem arte própria continuam representados por formas geométricas.
+Referência para a identidade visual, os personagens e os ambientes. As seis salas utilizam as ilustrações fornecidas, exibidas no cenário. Os sete personagens possuem miniaturas no cenário e retratos maiores nos diálogos. Os cinco equipamentos possuem imagens no cenário e na inspeção; as evidências correspondentes também mostram essas imagens no inventário. O investigador controlável e os registros sem arte própria continuam representados por formas geométricas.
 
 As imagens dos personagens são estáticas, exibidas inteiras, com seus fundos originais e sem distorção. A borda azul identifica uma conversa ainda não consultada; a borda verde indica que o personagem já foi ouvido. Se uma imagem estiver ausente ou inválida, o personagem permanece acessível por um marcador circular e pelo diálogo textual.
 
@@ -127,7 +127,7 @@ A investigação começa em um painel inspirado em murais de detetive, com inter
 - **Concluir o caso:** depois de reunir as oito pistas e resolver os oito desafios, use **Apresentar conclusão** no mural. Na tela de conclusão, escolha a pessoa, o método, o equipamento e o horário do evento e confirme sua resposta.
 
 - WASD ou setas: mover; E: interagir perto de um marcador.
-- I ou Tab: inventário; M: mapa; J: painel; Esc: voltar/pausar.
+- I ou Tab: inventário; J: painel; Esc: voltar/pausar.
 - Mouse: botões e lacunas; 1–4: opções do campo selecionado; Tab: próximo campo na mesa de dedução; Enter: verificar ou continuar após o resultado.
 - H durante o diálogo: consultar a habilidade do personagem; clique para utilizá-la.
 - Retratos: sete personagens com fichas e depoimentos. Ícones dourados: equipamentos. Quadrados dourados: outros registros. Bordas e marcadores ficam verdes após coletar a evidência; no computador interno, após examiná-lo.

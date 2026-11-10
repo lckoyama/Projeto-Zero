@@ -29,7 +29,13 @@ from game.results_ui import ResultsUI
 class Game(ResultsUI, NotesUI, BoardNavigation, TheoryUI, ComparisonUI, HypothesisUI, DeductionUI, InvestigationUI, AbilityScenes):
     def __init__(self):
         pygame.init()
-        self.screen = pygame.display.set_mode((s.WIDTH, s.HEIGHT))
+        display = pygame.display.Info()
+        available_width = max(800, display.current_w - 80)
+        available_height = max(533, display.current_h - 180)
+        scale = min(1.0, available_width / s.WIDTH, available_height / s.HEIGHT)
+        self.window_size = (round(s.WIDTH * scale), round(s.HEIGHT * scale))
+        self.window = pygame.display.set_mode(self.window_size)
+        self.screen = pygame.Surface((s.WIDTH, s.HEIGHT))
         pygame.display.set_caption(s.TITLE)
         self.clock = pygame.time.Clock()
         # Fonte do sistema com suporte a símbolos; fallback do próprio Pygame.
@@ -41,6 +47,34 @@ class Game(ResultsUI, NotesUI, BoardNavigation, TheoryUI, ComparisonUI, Hypothes
         self.scene = "menu"
         self.has_game = False
         self.reset()
+
+    def mouse_position(self):
+        scale = min(self.window.get_width() / s.WIDTH, self.window.get_height() / s.HEIGHT)
+        offset_x = (self.window.get_width() - s.WIDTH * scale) / 2
+        offset_y = (self.window.get_height() - s.HEIGHT * scale) / 2
+        mouse_x, mouse_y = pygame.mouse.get_pos()
+        return ((mouse_x - offset_x) / scale, (mouse_y - offset_y) / scale)
+
+    def _present(self):
+        scale = min(self.window.get_width() / s.WIDTH, self.window.get_height() / s.HEIGHT)
+        size = (round(s.WIDTH * scale), round(s.HEIGHT * scale))
+        scaled = pygame.transform.smoothscale(self.screen, size)
+        self.window.fill(s.BG)
+        self.window.blit(scaled, scaled.get_rect(center=self.window.get_rect().center))
+
+    def _logical_event(self, event):
+        if event.type not in (pygame.MOUSEMOTION, pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP):
+            return event
+        scale = min(self.window.get_width() / s.WIDTH, self.window.get_height() / s.HEIGHT)
+        offset_x = (self.window.get_width() - s.WIDTH * scale) / 2
+        offset_y = (self.window.get_height() - s.HEIGHT * scale) / 2
+        data = event.dict.copy()
+        if "pos" in data:
+            data["pos"] = ((data["pos"][0] - offset_x) / scale,
+                           (data["pos"][1] - offset_y) / scale)
+        if "rel" in data:
+            data["rel"] = (data["rel"][0] / scale, data["rel"][1] / scale)
+        return pygame.event.Event(event.type, data)
 
     def reset(self, case_id="link", revision=CASE_REVISION):
         pygame.key.stop_text_input()
@@ -109,7 +143,7 @@ class Game(ResultsUI, NotesUI, BoardNavigation, TheoryUI, ComparisonUI, Hypothes
 
     def button(self, label, rect, action, enabled=True):
         rect = pygame.Rect(rect)
-        hovered = rect.collidepoint(pygame.mouse.get_pos())
+        hovered = rect.collidepoint(self.mouse_position())
         color = s.PANEL_ALT if hovered and enabled else s.PANEL
         shadow = rect.move(0, 3)
         pygame.draw.rect(self.screen, s.PANEL_DARK, shadow, border_radius=8)
@@ -229,7 +263,7 @@ class Game(ResultsUI, NotesUI, BoardNavigation, TheoryUI, ComparisonUI, Hypothes
             if key == pygame.K_ESCAPE:
                 if self.scene == "world":
                     self.scene = "pause"
-                elif self.scene in ("dialogue", "inventory", "map", "board", "pause", "ability", "ability_records"):
+                elif self.scene in ("dialogue", "inventory", "board", "pause", "ability", "ability_records"):
                     self.scene = "world"
                 elif self.scene == "dossier" and self.relation_return:
                     self.relation_return = False
@@ -249,8 +283,6 @@ class Game(ResultsUI, NotesUI, BoardNavigation, TheoryUI, ComparisonUI, Hypothes
                 elif key in (pygame.K_i, pygame.K_TAB):
                     self.selection = 0
                     self.scene = "inventory"
-                elif key == pygame.K_m:
-                    self.scene = "map"
                 elif key == pygame.K_j:
                     self.scene = "board"
             elif self.scene == "dialogue":
@@ -300,7 +332,7 @@ class Game(ResultsUI, NotesUI, BoardNavigation, TheoryUI, ComparisonUI, Hypothes
         pygame.draw.rect(self.screen, s.EDGE, (20, 678, 1160, 95), 1, border_radius=10)
         prompt_color = s.GREEN if target else s.TEXT
         self.text(prompt, 42, 694, 1115, prompt_color)
-        self.text("WASD / setas  mover     E  interagir     I / Tab  evidências     M  mapa     J  mural     Esc  pausa",
+        self.text("WASD / setas  mover     E  interagir     I / Tab  evidências     J  mural     Esc  pausa",
                   42, 743, 1115, s.MUTED, small=True)
 
     def draw_target_label(self, label, position, color):
@@ -413,7 +445,7 @@ class Game(ResultsUI, NotesUI, BoardNavigation, TheoryUI, ComparisonUI, Hypothes
             self.title("Como investigar")
             self.text("WASD ou setas: mover. E: interagir quando estiver perto.\n"
                       "Retratos azuis: personagens. Ícones e quadrados dourados: objetos e registros. Verde: já consultado.\n"
-                      "I ou Tab: inventário. M: mapa. J: painel de investigação. Esc: voltar ou pausar.\n\n"
+                      "I ou Tab: inventário. J: painel de investigação. Esc: voltar ou pausar.\n\n"
                       "No mural, arraste fichas e use Ligar fichas para conectar duas hipóteses. Use o catálogo lateral para consultar pessoas, itens, locais e pistas.\n"
                       "Clique em Explorar banco para entrar nas salas pelas portas do corredor. Reúna oito pistas e volte com J para resolver os desafios.\n\n"
                       "Na mesa de dedução, clique numa lacuna e escolha uma opção (1–4). Tab muda de campo; Enter verifica e continua após o resultado.\n"
@@ -467,8 +499,6 @@ class Game(ResultsUI, NotesUI, BoardNavigation, TheoryUI, ComparisonUI, Hypothes
             self.draw_puzzle()
         elif self.scene == "conclusion":
             self.draw_case_conclusion()
-        elif self.scene == "map":
-            self.draw_map()
         elif self.scene == "pause":
             self.title("Investigação pausada")
             self.button("Continuar", (60, 200, 450, 60), lambda: self.set_scene("world"))
@@ -490,6 +520,10 @@ class Game(ResultsUI, NotesUI, BoardNavigation, TheoryUI, ComparisonUI, Hypothes
                 # Atualiza áreas clicáveis antes de processar eventos da cena atual.
                 self.draw()
                 for event in pygame.event.get():
+                    if event.type == pygame.VIDEORESIZE:
+                        self.window = pygame.display.set_mode(event.size)
+                        continue
+                    event = self._logical_event(event)
                     previous_scene = self.scene
                     self.handle_event(event)
                     if self.scene != previous_scene:
@@ -497,6 +531,7 @@ class Game(ResultsUI, NotesUI, BoardNavigation, TheoryUI, ComparisonUI, Hypothes
                 if self.scene == "world":
                     self.player.update(pygame.key.get_pressed(), dt, self.bank.walls)
                 self.draw()
+                self._present()
                 pygame.display.flip()
         finally:
             pygame.quit()

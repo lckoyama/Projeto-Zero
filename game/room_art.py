@@ -37,7 +37,7 @@ class RoomArt:
                 ratio = min(area.width / source.get_width(), area.height / source.get_height())
                 size = (max(1, round(source.get_width() * ratio)),
                         max(1, round(source.get_height() * ratio)))
-            self.scaled[key] = pygame.transform.scale(source, size)
+            self.scaled[key] = pygame.transform.smoothscale(source, size)
         picture = self.scaled[key]
         surface.blit(picture, area if fill else picture.get_rect(center=area.center))
         return True
