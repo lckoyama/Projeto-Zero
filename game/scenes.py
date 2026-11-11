@@ -284,7 +284,10 @@ class Game(ResultsUI, NotesUI, BoardNavigation, TheoryUI, ComparisonUI, Hypothes
                     self.selection = 0
                     self.scene = "inventory"
                 elif key == pygame.K_j:
-                    self.scene = "board"
+                    if len(self.talked) == len(self.characters) and len(self.inventory.ids) == len(self.evidence):
+                        self.begin_analysis()
+                    else:
+                        self.scene = "board"
             elif self.scene == "dialogue":
                 if key == pygame.K_h:
                     self.open_ability()
@@ -327,7 +330,10 @@ class Game(ResultsUI, NotesUI, BoardNavigation, TheoryUI, ComparisonUI, Hypothes
         pygame.draw.rect(self.screen, s.EDGE, progress, 1, border_radius=7)
         self.text(f"EVIDÊNCIAS  {len(self.inventory.ids)}/8", 718, 28, 150, s.GOLD, small=True)
         self.text(f"DEPOIMENTOS  {len(self.talked)}/7", 915, 28, 170, s.GREEN, small=True)
-        prompt = "E • " + target[1].get("name", target[1].get("object", "")) if target else self.message
+        complete = len(self.talked) == len(self.characters) and len(self.inventory.ids) == len(self.evidence)
+        prompt = ("Todos os depoimentos e evidências foram coletados. Pressione J para resolver a lógica."
+                  if complete else
+                  "E • " + target[1].get("name", target[1].get("object", "")) if target else self.message)
         pygame.draw.rect(self.screen, s.PANEL_DARK, (20, 678, 1160, 95), border_radius=10)
         pygame.draw.rect(self.screen, s.EDGE, (20, 678, 1160, 95), 1, border_radius=10)
         prompt_color = s.GREEN if target else s.TEXT

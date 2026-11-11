@@ -218,7 +218,8 @@ class InvestigationUI:
 
     def draw_board(self):
         self.dossier_header("O MISTÉRIO DA INVASÃO BANCÁRIA")
-        self.ui_button("Explorar banco", (855, 17, 145, 32), lambda: self.set_scene("world"))
+        self.ui_button("EXPLORAR BANCO", (835, 14, 165, 38),
+                       lambda: self.set_scene("world"), active=True)
         self.ui_button("Salvar", (1010, 17, 75, 32), self.save_game)
         self.ui_button("Menu", (1095, 17, 80, 32), lambda: self.set_scene("menu"))
         # Arquivo do caso, à esquerda.
@@ -227,25 +228,6 @@ class InvestigationUI:
         self.ui_label("ARQUIVO DO CASO / 001", 18, 88, CYAN, 185)
         self.ui_label("Invasão bancária", 18, 130, width=185)
         self.ui_label("Informações confidenciais comprometidas. Acesso indevido identificado às 21h07. Reconstrua o incidente com evidências.", 18, 161, s.MUTED, 185)
-        self.ui_label("CONSULTAR DOSSIÊS", 18, 294, CYAN, 185)
-        for index, (kind, label) in enumerate([("person", "Pessoas"), ("item", "Itens"), ("room", "Locais"), ("evidence", "Pistas")]):
-            self.ui_button(label, (16 + index % 2 * 96, 324 + index // 2 * 38, 90, 31),
-                           lambda value=kind: self.choose_catalog(value), active=self.catalog == kind)
-        keys = self.catalog_keys()
-        for index, key in enumerate(keys[self.catalog_page * 6:self.catalog_page * 6 + 6]):
-            name = self.entry(key)[0]
-            if len(name) > 22:
-                name = name[:21] + "…"
-            self.ui_button(name, (16, 414 + index * 39, 186, 33),
-                           lambda value=key: setattr(self, "board_selected", value), active=key == self.board_selected)
-        if not keys:
-            self.ui_label("As pistas aparecem aqui após a coleta no banco.", 18, 425, s.MUTED, 180)
-        if len(keys) > 6:
-            self.ui_button("Anterior", (16, 655, 89, 30), lambda: self.page_catalog(-1))
-            self.ui_button("Próxima", (112, 655, 90, 30), lambda: self.page_catalog(1))
-        self.ui_button("Comparar depoimentos", (16, 693, 186, 30), self.open_comparison)
-        self.ui_button("Registros / habilidades", (16, 726, 186, 25), lambda: self.set_scene("ability_records"))
-        self.ui_button("Linha do tempo", (16, 753, 186, 30), lambda: self.set_scene("timeline"))
         # Mural central.
         pygame.draw.rect(self.screen, (12, 18, 23), CANVAS)
         for x in range(238, 970, 16):
@@ -394,12 +376,8 @@ class InvestigationUI:
         self.text("Um incidente. Oito evidências.\nUma conclusão que precisa de prova.", x=54, y=292, width=450)
         self.text("Explore o banco, consulte os depoimentos e conecte suas hipóteses no mural. Use lógica matemática para reconstruir o incidente.", x=54, y=393, width=435, small=True, color=s.MUTED)
         self.ui_button("INICIAR INVESTIGAÇÃO", (54, 520, 400, 48), self.start, active=True)
-        self.ui_button("Retomar", (54, 583, 194, 40),
-                       lambda: self.set_scene("board"), enabled=self.has_game)
-        self.ui_button("Carregar partida", (260, 583, 194, 40), self.load_game)
-        self.ui_button("Instruções", (54, 637, 194, 36), lambda: self.set_scene("instructions"))
-        self.ui_button("Sair", (260, 637, 194, 36), lambda: setattr(self, "running", False))
-        self.ui_button("Demonstração / Seu Antônio", (54, 681, 400, 36), self.start_demo)
+        self.ui_button("Sair", (54, 583, 194, 40), lambda: setattr(self, "running", False))
+        self.ui_button("Demonstração / Seu Antônio", (54, 637, 400, 36), self.start_demo)
         self.ui_label(self.save_message, 54, 724, s.MUTED, 440)
         # Composição editorial com os próprios assets, sem relações pré-julgadas.
         pygame.draw.rect(self.screen, (14, 22, 32), (520, 100, 638, 611), border_radius=8)

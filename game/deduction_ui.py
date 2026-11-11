@@ -62,7 +62,7 @@ class DeductionUI:
         self.dossier_header("MESA DE DEDUÇÃO / LÓGICA MATEMÁTICA")
         self.ui_button("Voltar ao mural", (1000, 17, 175, 32), lambda: self.set_scene("board"))
         self.text(sheet["title"], x=25, y=84, width=1000, color=CYAN)
-        self.ui_label(f"{self.puzzle_index}/8 • {self.score.points} pts", 1000, 89, s.MUTED, 190)
+        self.ui_label(f"DESAFIO {self.puzzle_index + 1}/8 • {self.score.points} pts", 925, 89, s.MUTED, 265)
         panels = [(24, 133, 334, 438), (374, 133, 468, 438), (858, 133, 318, 438)]
         for rect in panels:
             pygame.draw.rect(self.screen, (15, 24, 36), rect, border_radius=4)
@@ -79,9 +79,12 @@ class DeductionUI:
         else:
             facts = "Compare todas as valorações possíveis."
         self.ui_label(facts, 40, 478, s.TEXT, 300)
-        self.ui_label(sheet["instruction"], 390, 193, s.TEXT, 435)
+        self.ui_label("COMO RESOLVER", 390, 193, CYAN, 435)
+        self.ui_label("1. Selecione uma lacuna.\n2. Escolha uma opção e verifique.",
+                      390, 220, s.MUTED, 435)
+        instruction_end = self.ui_label(sheet["instruction"], 390, 270, s.TEXT, 435)
         count = len(sheet["fields"])
-        field_y = 284 if count < 4 else 270
+        field_y = max(300, instruction_end + 8) if count < 4 else 286
         for index, (label, choices) in enumerate(sheet["fields"]):
             y = field_y + index * 60
             self.ui_label(label, 392, y + 13, s.MUTED, 205)
@@ -89,8 +92,11 @@ class DeductionUI:
             value = choices[selection][0] if selection is not None else "[ preencher ]"
             self.ui_button(value, (597, y, 225, 46), lambda i=index: self.select_sheet_field(i),
                            active=index == self.sheet_field, enabled=not self.feedback)
+        filled = len(self.sheet_answers) - self.sheet_answers.count(None)
+        ready = filled == len(self.sheet_answers)
         if not self.feedback:
-            self.ui_button("Verificar dedução [Enter]", (390, 512, 435, 40), self.check_sheet, active=True)
+            self.ui_button("Verificar dedução [Enter]" if ready else "Preencha todas as lacunas",
+                           (390, 512, 435, 40), self.check_sheet, active=ready, enabled=ready)
         else:
             self.ui_label("VALIDADO" if self.correct else "REVISÃO NECESSÁRIA", 392, 528,
                           s.GREEN if self.correct else s.RED, 430)
@@ -126,13 +132,14 @@ class DeductionUI:
             self.ui_button("Continuar [Enter]" if self.correct else "Revisar campos [Enter]",
                            (922, 710, 235, 44), self.next_puzzle, active=True)
         else:
-            self.ui_label("BANCO DE OPÇÕES / " + sheet["fields"][self.sheet_field][0], 42, 606, CYAN, 1100)
+            self.ui_label(f"PASSO 2 / ESCOLHA UMA OPÇÃO  •  {filled}/{len(self.sheet_answers)} lacunas preenchidas",
+                          42, 606, CYAN, 1100)
             choices = sheet["fields"][self.sheet_field][1]
             for index, (label, _) in enumerate(choices):
                 self.ui_button(f"{index + 1}. {label}", (42 + index * 279, 647, 265, 47),
                                lambda i=index: self.choose_sheet_token(i))
             hint = (self.puzzles[self.puzzle_index]["explanation"] if hint_key in self.score.hints
-                    else "Clique no campo e depois na opção. Teclas 1–4: escolher / Tab: próximo campo / Enter: verificar.")
+                    else "Clique em uma lacuna para selecioná-la. Depois clique em uma opção; ao preencher todas, verifique a dedução.")
             self.ui_label(hint, 42, 710, s.MUTED, 1100)
 
     def open_sheet_source(self, key):
