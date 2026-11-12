@@ -3,7 +3,7 @@ import pygame
 
 from game import settings as s
 from game.abilities import (ABILITIES, ABILITY_CHALLENGES, DIGITAL_PUZZLE,
-                            validate_ability_challenge)
+                            REQUIREMENT_NAMES, validate_ability_challenge)
 from game.case_data import CHARACTERS
 from game.puzzles import validate
 from game.savegame import load_progress, save_progress
@@ -12,6 +12,13 @@ from game.savegame import load_progress, save_progress
 class AbilityScenes:
     def ability_available(self, name):
         return ABILITIES[name]["requires"] <= self.abilities.inspected
+
+    def ability_requirement_text(self, name):
+        missing = ABILITIES[name]["requires"] - self.abilities.inspected
+        if not missing:
+            return ""
+        requirements = [REQUIREMENT_NAMES[key] for key in sorted(missing)]
+        return "Para consultar, primeiro: " + "; ".join(requirements) + "."
 
     def ability_puzzle(self, name):
         if name == "Bianca":
@@ -100,7 +107,8 @@ class AbilityScenes:
             self.button("Pedir dica (-5 pts)", (60, 610, 270, 40), self.request_ability_hint,
                         enabled=hint_key not in self.score.hints)
             if hint_key in self.score.hints:
-                self.text(self.ability_puzzle(self.active_person)["explanation"], y=525, small=True)
+                self.text(self.ability_puzzle(self.active_person).get(
+                    "hint", "Revise as premissas e a regra indicada."), y=525, small=True)
         self.text(f"Pontuação: {self.score.points}", x=870, y=710, width=280, small=True)
         self.button("Voltar ao banco", (60, 710, 350, 56), lambda: self.set_scene("world"))
 
@@ -117,7 +125,7 @@ class AbilityScenes:
         self.text(self.abilities.records.get(self.record_person,
                   "Converse com este personagem e utilize sua habilidade para registrar o resultado."),
                   455, 290, 680)
-        self.button("Voltar ao painel", (815, 710, 325, 56), lambda: self.set_scene("board"))
+        self.button("Voltar ao banco", (815, 710, 325, 56), lambda: self.set_scene("world"))
 
     def save_game(self):
         try:
@@ -129,7 +137,7 @@ class AbilityScenes:
     def load_game(self):
         try:
             load_progress(self)
-            self.set_scene(self.score.outcome or "board")
+            self.set_scene(self.score.outcome or "world")
             self.message = "Progresso carregado. Evidências e habilidades restauradas."
         except FileNotFoundError:
             self.save_message = "Nenhuma partida salva foi encontrada."

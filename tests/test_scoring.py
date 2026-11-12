@@ -46,24 +46,24 @@ class ScoreTests(unittest.TestCase):
         self.assertEqual(score.points, 130)
         score.answer("sheet:1", False)
         score.answer("sheet:1", True)
-        self.assertEqual(score.points, 120)  # Acertar depois de errar não rende +20.
+        self.assertEqual(score.points, 115)  # Acertar depois de errar não rende +20.
         self.assertEqual((score.correct, score.errors), (2, 1))
         score.hint("sheet:2")
         self.assertFalse(score.hint("sheet:2"))
-        self.assertEqual((score.points, score.hints_used), (115, 1))
+        self.assertEqual((score.points, score.hints_used), (107, 1))
         score.accuse([0, 0, 0, 0], False)
         score.accuse([0, 0, 0, 0], False)
-        self.assertEqual(score.points, 75)
+        self.assertEqual(score.points, 47)
         score.accuse([0, 0, 2, 3], True)
         score.accuse([0, 0, 2, 3], True)
-        self.assertEqual(score.points, 125)
+        self.assertEqual(score.points, 97)
         self.assertEqual((score.correct, score.errors), (3, 3))
 
     def test_negative_score_is_not_a_progress_reset(self):
         score = Score()
         for _ in range(11):
             score.answer("sheet:0", False)
-        self.assertEqual(score.points, -10)
+        self.assertEqual(score.points, -65)
         self.assertEqual(score.outcome, None)
 
 
@@ -91,23 +91,23 @@ class ScoreGameTests(unittest.TestCase):
         game = self.game
         game.request_hint()
         game.request_hint()
-        self.assertEqual((game.score.points, game.score.hints_used), (95, 1))
+        self.assertEqual((game.score.points, game.score.hints_used), (92, 1))
         game.check_sheet()  # Campo vazio não é uma resposta incorreta.
         self.assertEqual(game.score.errors, 0)
         game.sheet_answers = solution(game, 0, False)
         game.check_sheet()
         game.check_sheet()  # Mesmo resultado continua aberto.
-        self.assertEqual((game.score.points, game.score.errors), (85, 1))
+        self.assertEqual((game.score.points, game.score.errors), (77, 1))
         game.next_puzzle()
         self.assertEqual(game.puzzle_index, 0)
         game.sheet_answers = solution(game, 0)
         game.check_sheet()
-        self.assertEqual(game.score.points, 85)
+        self.assertEqual(game.score.points, 77)
         game.next_puzzle()
         self.assertEqual(game.puzzle_index, 1)
         game.sheet_answers = solution(game, 1)
         game.check_sheet()
-        self.assertEqual(game.score.points, 105)
+        self.assertEqual(game.score.points, 97)
 
     def test_all_four_stories_scores_and_end_screens(self):
         game = self.game
@@ -126,7 +126,7 @@ class ScoreGameTests(unittest.TestCase):
                 game.accusation = [0, 0, 0, 0]
                 game.submit()
                 game.draw()
-                self.assertEqual((game.scene, game.score.points), ("error", 320))
+                self.assertEqual((game.scene, game.score.points), ("error", 310))
                 self.assertEqual(game.inventory.ids, before)
                 self.assertEqual(game.puzzle_index, 8)
                 game.retry_conclusion()
@@ -134,7 +134,7 @@ class ScoreGameTests(unittest.TestCase):
                 game.submit()
                 game.draw()
                 game.submit()
-                self.assertEqual((game.scene, game.score.points), ("victory", 370))
+                self.assertEqual((game.scene, game.score.points), ("victory", 360))
                 self.assertEqual((game.score.correct, game.score.errors), (9, 1))
                 game.start_demo()
                 self.assertEqual((game.case_id, game.score.points), ("link", 100))
@@ -151,13 +151,13 @@ class ScoreGameTests(unittest.TestCase):
         game.request_ability_hint()
         game.use_ability(0)
         self.assertFalse(game.ability_success)
-        self.assertEqual(game.score.points, 85)
+        self.assertEqual(game.score.points, 77)
         game.use_ability(1)
         self.assertTrue(game.ability_success)
         self.assertIn("Jonas", game.abilities.used)
-        self.assertEqual(game.score.points, 85)
+        self.assertEqual(game.score.points, 77)
         game.use_ability(1)
-        self.assertEqual(game.score.points, 85)
+        self.assertEqual(game.score.points, 77)
 
     def test_all_ability_buttons_complete_in_every_story(self):
         game = self.game
@@ -190,10 +190,10 @@ class ScoreGameTests(unittest.TestCase):
         game.puzzle_index = 8
         game.submit()
         game.submit()
-        self.assertEqual((game.score.points, game.score.errors), (80, 1))
+        self.assertEqual((game.score.points, game.score.errors), (70, 1))
         game.retry_conclusion()
         game.submit()
-        self.assertEqual((game.score.points, game.score.errors), (60, 2))
+        self.assertEqual((game.score.points, game.score.errors), (40, 2))
 
     def test_save_stats_and_prevent_rewards_after_load(self):
         game = self.game

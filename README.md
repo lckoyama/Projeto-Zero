@@ -16,15 +16,15 @@ Se o ambiente Python já estiver ativado, use `python main.py`. Na primeira exec
 
 ## Pontuação e requisitos acadêmicos
 
-A partida começa com **100 pontos**. A coleta de cada uma das oito evidências concede **+10**, inclusive quando uma habilidade entrega o laudo automaticamente. Um desafio lógico correto na primeira tentativa concede **+20**; uma resposta incorreta custa **10 pontos**; pedir uma dica custa **5 pontos**. Acertar depois de errar conclui o desafio, mas não recebe o bônus de primeira tentativa. Campos ainda vazios não contam como uma resposta.
+A partida começa com **100 pontos**. A coleta de cada uma das oito evidências concede **+10**, inclusive quando uma habilidade entrega o laudo automaticamente. Um desafio lógico correto na primeira tentativa concede **+20**; uma resposta incorreta custa **15 pontos**; pedir uma dica custa **8 pontos**. Acertar depois de errar conclui o desafio, mas não recebe o bônus de primeira tentativa. Campos ainda vazios não contam como uma resposta.
 
 Essas regras também se aplicam aos sete desafios de autorização das habilidades: cada habilidade e cada uma das oito deduções tem um identificador próprio. Assim, uma partida perfeita pela interface pode atingir **530 pontos**: 100 iniciais + 80 por evidências + 160 pelas oito deduções + 140 pelas sete habilidades + 50 pela conclusão. A reabertura de laudos, habilidades e desafios concluídos não repete os bônus. Os caminhos de ativação direta preservados para compatibilidade não concedem bônus por uma resposta lógica que não foi apresentada.
 
-**Pedir dica** está disponível nas deduções e nas habilidades pendentes. Cada desafio possui uma dica; ela permanece disponível para releitura, inclusive após carregar, sem outra cobrança. A dica explica a regra ou o raciocínio e pode revelar a resposta. Consultá-la não conta como tentativa incorreta.
+**Pedir dica** está disponível nas deduções e nas habilidades pendentes. Cada desafio possui uma dica; ela permanece disponível para releitura, inclusive após carregar, sem outra cobrança. A dica orienta sobre a regra ou o raciocínio, mas não revela a resposta nem preenche as lacunas. Consultá-la não conta como tentativa incorreta.
 
-Após reunir as oito evidências e concluir as oito deduções, use **Apresentar conclusão → Arriscar solução final**. Uma conclusão correta concede **+50** uma única vez. Uma acusação incorreta custa **20 pontos** e abre a tela de derrota. **Revisar conclusão** permite uma nova tentativa, com a mesma investigação; cada nova acusação incorreta é penalizada, inclusive se repetir a combinação. Cliques duplicados enquanto o resultado está aberto não repetem a cobrança. Pontuação negativa não apaga a investigação nem impede recuperação.
+Após reunir as oito evidências e concluir as oito deduções, use **Apresentar conclusão → Arriscar solução final**. Uma conclusão correta concede **+50** uma única vez. Uma acusação incorreta custa **30 pontos** e abre a tela de derrota. **Revisar conclusão** permite uma nova tentativa, com a mesma investigação; cada nova acusação incorreta é penalizada, inclusive se repetir a combinação. Cliques duplicados enquanto o resultado está aberto não repetem a cobrança. Pontuação negativa não apaga a investigação nem impede recuperação.
 
-O mural e o banco exibem a pontuação. As telas de vitória e derrota mostram pontos, acertos, erros, dicas, evidências, deduções e habilidades concluídas, além de **Nova partida**, **Salvar resultado** e retorno ao menu. Acertos incluem desafios lógicos corretos (mesmo após erro) e a primeira conclusão correta; erros incluem respostas lógicas e acusações incorretas. Deduções concluídas continuam contadas separadamente, de 0 a 8.
+O banco exibe a pontuação. As telas de vitória e derrota mostram pontos, acertos, erros, dicas, evidências, deduções e habilidades concluídas, além de **Nova partida**, **Salvar resultado** e retorno ao menu. Acertos incluem desafios lógicos corretos (mesmo após erro) e a primeira conclusão correta; erros incluem respostas lógicas e acusações incorretas. Deduções concluídas continuam contadas separadamente, de 0 a 8.
 
 O salvamento registra o histórico que permite recalcular a pontuação, tentativas, dicas e resultado, além do progresso já existente. Arquivos antigos sem estatísticas continuam aceitos: começam com 100 pontos, sem atribuir acertos, erros ou bônus retroativos desconhecidos; evidências e desafios já concluídos não podem render novamente. Carregar um resultado salvo reabre a tela correspondente.
 
@@ -65,7 +65,6 @@ Abra esta pasta no VS Code. Use Python 3.10 ou superior e execute no terminal:
 ```powershell
 python -m venv .venv
 .venv\Scripts\python -m pip install -r requirements.txt
-.venv\Scripts\python main.py
 ```
 
 Ou, com seu ambiente Python já selecionado/ativado:
@@ -112,29 +111,24 @@ Em todos os finais, **21h07 é o horário do alerta, não o início do incidente
 
 ### Como jogar
 
-A investigação começa em um painel inspirado em murais de detetive, com interface escura, destaques em ciano, fichas fotográficas e ligações verificáveis. Clique em **Explorar banco** para controlar o investigador e use **J** para retornar ao mural.
+A tela inicial tem apenas o botão **Jogar**. Depois dele, a história do caso é apresentada; clique em **Começar investigação** para entrar diretamente no banco.
 
-- **Catálogo à esquerda:** consulte as sete pessoas, cinco equipamentos, seis locais e as pistas já coletadas. Use Anterior/Próxima quando houver mais fichas.
-- **Abrir ficha:** leia características, habilidades e informações disponíveis. Depoimentos e laudos permanecem bloqueados até serem obtidos na exploração.
-- **Fixar no mural:** adicione a ficha selecionada; arraste-a para organizar. Retirar do mural ou o botão direito remove apenas a ficha visual, sem apagar evidências.
-- **Ligar fichas:** ative e clique em duas fichas para abrir a análise da relação. Escolha o tipo, a evidência e a justificativa lógica. Clique numa linha ou ligue as mesmas fichas para revisar; a opção Retirar ligação a remove.
-- **Rótulos das ligações:** as linhas exibem **Confirma**, **Confirma horário**, **Contradiz** ou **Usou**, junto do estado da justificativa. Clique na linha ou no rótulo para abrir as premissas, a conclusão, a regra e a fonte; use **Consultar evidência** para reler o laudo. **Usou** exige uma ligação entre pessoa e equipamento com registro de uso, não apenas descoberta ou presença. Nas histórias de Jonas e Carlos, as explicações falsas podem ser contraditas após ouvir o depoimento e obter a perícia: escolha a afirmação de confronto, P e P → ¬Q, conclusão ¬Q e Modus Ponens. Editar a justificativa volta a deixá-la pendente; os rótulos e as justificativas acompanham o salvamento.
-- **Organizar / Limpar ligações:** reorganize as posições ou remova as linhas e suas justificativas. As relações não coletam evidências nem resolvem os desafios finais automaticamente.
-- **Navegação do mural:** use a roda do mouse sobre o mural ou os botões **− / +** para ajustar o zoom entre 35% e 175%. Arraste uma área vazia com o botão esquerdo, ou use o botão do meio, para movimentar a visualização. Arrastar uma ficha continua movendo apenas a ficha. **Enquadrar** mostra as fichas do filtro atual; **Localizar ficha** centraliza a selecionada e volta ao filtro Todas. **Filtro** alterna Todas, Pessoas, Equipamentos, Locais, Pistas e Com ligações, sem apagar fichas ou provas. **Organizar** distribui todas as fichas sem sobreposição, preserva ligações e enquadra a visualização. Zoom, posição da visualização e filtro acompanham o salvamento manual. A roda sobre o catálogo à esquerda continua mudando suas páginas.
+Explore as seis salas, converse com as sete pessoas e examine os objetos e registros. Use **I** ou **Tab** para consultar as evidências. Quando todos os depoimentos e as oito evidências forem reunidos, pressione **J** para iniciar os desafios de lógica.
+
 - **Linha do tempo:** consulte os horários dos registros descobertos; horários não encontrados ficam ocultos.
-- **Comparar depoimentos:** abra a comparação pelo botão à esquerda do mural. Escolha a pessoa, um trecho do depoimento e uma evidência coletada; depois clique em **Comparar trecho e evidência**. Os textos aparecem lado a lado, com resultado **Confirma o trecho**, **Contradiz o trecho** ou **Evidência insuficiente**, acompanhado de uma justificativa. É necessário ouvir a pessoa e obter a fonte primeiro. O computador interno também fica disponível após ser examinado. A análise vale para o trecho escolhido, não determina culpa e não substitui os desafios finais. Trocar a seleção limpa o resultado anterior; a comparação pode ser refeita a qualquer momento com as fontes da partida.
-- **Resolver lógica:** fica disponível após reunir as oito pistas. A conclusão exige todos os oito desafios corretos.
-- **Concluir o caso:** depois de reunir as oito pistas e resolver os oito desafios, use **Apresentar conclusão** no mural. Na tela de conclusão, escolha a pessoa, o método, o equipamento e o horário do evento e confirme sua resposta.
+- **Comparar depoimentos:** compare trechos de depoimentos com evidências coletadas para verificar confirmações, contradições ou insuficiência de informação.
+- **Resolver lógica:** fica disponível após reunir os oito depoimentos e as oito evidências. A conclusão exige todos os oito desafios corretos.
+- **Concluir o caso:** depois dos desafios, escolha a pessoa, o método, o equipamento e o horário do evento e confirme sua resposta.
 
 - WASD ou setas: mover; E: interagir perto de um marcador.
-- I ou Tab: inventário; J: painel; Esc: voltar/pausar.
+- I ou Tab: inventário; J: resolver mistério quando estiver pronto; Esc: voltar/pausar.
 - Mouse: botões e lacunas; 1–4: opções do campo selecionado; Tab: próximo campo na mesa de dedução; Enter: verificar ou continuar após o resultado.
 - H durante o diálogo: consultar a habilidade do personagem; clique para utilizá-la.
 - Retratos: sete personagens com fichas e depoimentos. Ícones dourados: equipamentos. Quadrados dourados: outros registros. Bordas e marcadores ficam verdes após coletar a evidência; no computador interno, após examiná-lo.
 
-As portas das seis salas ficam voltadas ao corredor central. Explore, reúna oito evidências e resolva oito desafios pelo painel. Só então a reconstrução final fica disponível. Ela pede pessoa, método, equipamento e horário. Erros não apagam o progresso. A solução e a exclusão das hipóteses são apresentadas após acertar a reconstrução.
+As portas das seis salas ficam voltadas ao corredor central. Explore, reúna oito evidências e resolva oito desafios. Só então a reconstrução final fica disponível. Ela pede pessoa, método, equipamento e horário. Erros não apagam o progresso.
 
-O menu permite retomar a partida em memória ou carregar uma partida salva. Use **Salvar** no mural ou, no banco, pressione **Esc → Salvar progresso** para gravar em `saves/progress.json`. A pausa também permite carregar. O salvamento é manual e mantém posição, evidências, objetos examinados, habilidades utilizadas, registros do painel, desafios concluídos, fichas fixadas, posições das fichas e ligações de hipóteses. Salvamentos anteriores sem mural continuam compatíveis. Uma resposta ainda não confirmada com Continuar deve ser refeita após carregar. Começar uma nova investigação reinicia a memória, mas só substitui o arquivo anterior quando você salva novamente. O loop limita a atualização a 60 FPS, inclusive em diálogos.
+O menu permite retomar a partida em memória ou carregar uma partida salva. No banco, pressione **Esc → Salvar progresso** para gravar em `saves/progress.json`. O salvamento é manual e mantém posição, evidências, objetos examinados, habilidades utilizadas e desafios concluídos. Uma resposta ainda não confirmada com Continuar deve ser refeita após carregar. Começar uma nova investigação reinicia a memória, mas só substitui o arquivo anterior quando você salva novamente.
 
 ## Habilidades dos personagens
 
@@ -152,31 +146,13 @@ Converse com o personagem usando E, consulte sua habilidade com H ou pelo botão
 
 Habilidades já utilizadas não geram evidências duplicadas. Elas fornecem informações para análise; os oito desafios finais e a reconstrução continuam obrigatórios. As hipóteses de comparação não são novos depoimentos ou eventos da história. Não foram acrescentados valores ou transações financeiras. Os dados disponíveis não permitem ampliar a grade oficial de movimentações.
 
-Para conferir a persistência, utilize uma habilidade, salve na pausa, feche o jogo e carregue pelo menu. O resultado deve continuar no painel e as pistas já obtidas devem permanecer no inventário. Arquivos ausentes ou inválidos são tratados com uma mensagem, preservando a partida em memória.
+Para conferir a persistência, utilize uma habilidade, salve na pausa, feche o jogo e carregue pelo menu. O resultado e as pistas já obtidas devem permanecer no inventário. Arquivos ausentes ou inválidos são tratados com uma mensagem, preservando a partida em memória.
 
 ## Lógica matemática
 
 `game/logic.py` não importa Pygame. Expressões são nomes de variáveis, booleanos ou tuplas: `("implies", "P", "Q")`. O motor avalia negação, conjunção, disjunção inclusiva, condicional e bicondicional; gera todas as valorações; verifica equivalência e consequência semântica; produz contraexemplos.
 
 Os desafios abordam proposições simples e compostas, tabelas-verdade, De Morgan, Modus Ponens, Modus Tollens e afirmação indevida do consequente. Cada resposta é validada pelo motor, sem gabarito por índice. Todos os desafios são obrigatórios para vencer. O motor usa lógica proposicional clássica: premissas inconsistentes acarretam qualquer conclusão; os exercícios de inferência do jogo usam premissas consistentes.
-
-### Hipóteses verificáveis no mural
-
-Ao ligar duas fichas, escolha uma afirmação disponível, uma relação (**confirma o horário**, **contradiz o depoimento** ou **sustenta esta hipótese**) e uma evidência coletada. Complete duas premissas, a conclusão e a regra de inferência. Os campos alternam suas opções ao clicar. Use **Consultar evidência** para reler o laudo e voltar sem perder a justificativa.
-
-Clique em **Verificar relação**. O motor verifica se a fonte corresponde às fichas, se fornece as premissas escolhidas, se a conclusão expressa a relação e se a regra é aplicável. Uma premissa inventada, uma conclusão que apenas repete um fato sem justificar a relação ou uma regra inadequada não bastam.
-
-- **Cinza:** relação pendente ou em edição.
-- **Verde:** afirmação específica verificada a partir das fontes disponíveis.
-- **Vermelho:** justificativa não comprovada; consulte a explicação e revise.
-
-Exemplo para experimentar: obtenha o laudo do pendrive, fixe Bianca e o pendrive e ligue as fichas. A tela permite verificar o horário registrado usando as premissas do laudo. As definições de P e Q e as premissas disponíveis aparecem ao lado dos campos.
-
-As afirmações só aparecem após obter suas fontes. O sistema possui relações modeladas para conexão Wi-Fi, horários do navegador e da reunião, uso do pendrive, detecção do acesso, comprometimento de credenciais e descoberta/análise do transmissor. Fichas sem uma afirmação modelada ficam pendentes; isso não prova ausência de relação.
-
-Os depoimentos oficiais atuais são compatíveis com os registros. **Contradiz o depoimento** exige ouvir a declaração e demonstrar sua negação; o jogo rejeita contradições não sustentadas, sem inventar testemunhos falsos. A ordem temporal não é tratada como prova causal. Para a relação entre evento e credenciais, histórico e laudo são ambos necessários.
-
-Rascunhos e justificativas ficam salvos junto às ligações. O estado de verificação é recalculado ao carregar, e editar um campo torna a relação pendente até nova verificação. Remover uma ficha remove também suas ligações e justificativas. Salvamentos antigos sem justificativas continuam compatíveis.
 
 ### Mesa de dedução
 
@@ -193,7 +169,7 @@ A tela organiza o exercício em três colunas: premissas, campos de raciocínio 
 
 Nas inferências, uma conclusão válida com uma regra inadequada não basta. A estrutura da regra e a consequência semântica são verificadas. O contraexemplo é avaliado diretamente com os valores escolhidos. O feedback apresenta explicações e resultados calculados pelo motor.
 
-Quando houver evidências de apoio, use os botões numerados da terceira coluna e **Ler laudo**. É possível voltar à dedução sem perder o preenchimento. Os campos ficam na memória ao retornar ao mural; o salvamento em disco preserva os desafios concluídos, mas uma folha em andamento deve ser refeita ao carregar.
+Quando houver evidências de apoio, use os botões numerados da terceira coluna e **Ler laudo**. O salvamento em disco preserva os desafios concluídos, mas uma folha em andamento deve ser refeita ao carregar.
 
 Coincidência temporal não demonstra causalidade. As relações causais usadas são premissas explícitas de laudos fictícios. A condicional material sozinha também não demonstra uma causa real.
 
@@ -230,9 +206,7 @@ Os testes verificam conectivos, tabelas-verdade, equivalências, inferências, a
 - `game/deduction.py`, `game/deduction_ui.py`: validação das folhas de raciocínio e interface com lacunas, banco de opções e laudos de apoio.
 - `game/abilities.py`, `game/ability_scenes.py`: habilidades, requisitos, resultados e interface.
 - `game/savegame.py`: salvamento local em JSON e validação do progresso carregado.
-- `game/board.py`: fichas, posições e ligações de hipóteses do mural.
-- `game/hypotheses.py`, `game/hypothesis_ui.py`: relações fundamentadas nas evidências, verificação lógica e interface de justificativa.
-- `game/investigation_ui.py`: menu do caso, mural interativo, dossiês, cronologia e conclusão.
+- `game/investigation_ui.py`: dossiês, cronologia e conclusão.
 - `tests/`: testes automatizados do motor lógico e da integração do jogo.
 - `game/room_art.py`: carregamento das imagens e cache de versões reduzidas.
 - `assets/rooms/`: imagens de segurança, diretor, lazer, TI, servidores e RH.

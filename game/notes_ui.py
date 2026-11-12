@@ -80,7 +80,7 @@ class NotesUI:
         ctrl = getattr(event, "mod", 0) & pygame.KMOD_CTRL
         text = self.current_note()["text"]
         if key == pygame.K_ESCAPE:
-            self.set_scene("board")
+            self.set_scene("world")
         elif ctrl and key == pygame.K_s:
             self.save_game()
         elif ctrl and key == pygame.K_a:
@@ -115,7 +115,7 @@ class NotesUI:
 
     def draw_notes(self):
         self.dossier_header("MURAL / ANOTAÇÕES PESSOAIS")
-        self.ui_button("Voltar ao mural", (1000, 17, 175, 32), lambda: self.set_scene("board"))
+        self.ui_button("Voltar ao banco", (1000, 17, 175, 32), lambda: self.set_scene("world"))
         self.text(self.entry(self.note_key)[0], x=40, y=100, width=1120, color=s.CYAN)
         self.ui_label("Suas dúvidas e interpretações. Estas marcações não são provas nem avaliações automáticas do jogo.", 40, 150, s.MUTED, 1120)
         note = self.current_note()
@@ -138,5 +138,5 @@ class NotesUI:
                 pygame.draw.line(self.screen, s.CYAN, (x, y), (x, y + 23), 2)
         self.screen.set_clip(clip)
         self.ui_label(f"{len(note['text'])}/{NOTE_LIMIT} caracteres • Enter: nova linha • Ctrl+A: selecionar tudo • Ctrl+S: salvar • Roda: rolar", 40, 610, s.MUTED, 1120)
-        self.ui_label(self.save_message or "As notas permanecem ao voltar ao mural. O salvamento em disco é manual.", 40, 660, s.CYAN, 1120)
+        self.ui_label(self.save_message or "As notas permanecem disponíveis durante a investigação. O salvamento em disco é manual.", 40, 660, s.CYAN, 1120)
         self.ui_button("Salvar partida e notas", (40, 725, 300, 44), self.save_game, active=True)

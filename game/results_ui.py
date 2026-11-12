@@ -18,7 +18,7 @@ class ResultsUI:
             self.button("Ver prova / slides", (60, 560, 320, 46), lambda: self.set_scene("proof"))
         else:
             self.text("A combinação escolhida não corresponde aos laudos desta investigação. "
-                      "Cada nova tentativa incorreta custa 20 pontos. Você pode revisar a conclusão. "
+                      "Cada nova tentativa incorreta custa 30 pontos. Você pode revisar a conclusão. "
                       "Evidências, habilidades e desafios concluídos foram preservados.", y=265)
             self.button("Revisar conclusão", (60, 430, 340, 48), self.retry_conclusion)
             self.button("Consultar evidências", (420, 430, 340, 48), lambda: self.set_scene("inventory"))
@@ -36,4 +36,4 @@ class ResultsUI:
         self.text(f"Página {page + 1}/{len(sections)}", y=670, small=True)
         self.button("Anterior", (60, 720, 190, 44), lambda: setattr(self, "proof_page", max(0, page - 1)))
         self.button("Próxima", (270, 720, 190, 44), lambda: setattr(self, "proof_page", min(len(sections) - 1, page + 1)))
-        self.button("Voltar", (900, 720, 240, 44), lambda: self.set_scene("victory" if self.score.won else "board"))
+        self.button("Voltar", (900, 720, 240, 44), lambda: self.set_scene("victory" if self.score.won else "world"))

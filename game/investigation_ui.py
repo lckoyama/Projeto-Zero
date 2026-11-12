@@ -1,4 +1,6 @@
 """Interface do dossiê e mural de hipóteses, desenhada inteiramente em Pygame."""
+from pathlib import Path
+
 import pygame
 
 from game import settings as s
@@ -14,6 +16,7 @@ INK = (9, 13, 22)
 EDGE = (39, 54, 72)
 PAPER = (219, 226, 232)
 CYAN = (63, 193, 216)
+MENU_BACKGROUND_PATH = Path(__file__).resolve().parent.parent / "assets" / "reference" / "menu_background.png"
 
 
 class InvestigationUI:
@@ -295,8 +298,8 @@ class InvestigationUI:
         self.entry_art(self.board_selected, (50, 150, 300, 420))
         self.screen.blit(self.heading.render(title, True, s.TEXT), (390, 110))
         self.text(body, x=390, y=178, width=755, small=True)
-        destination = "relation" if self.relation_return else "puzzle" if self.sheet_return else "board"
-        label = "Voltar à relação" if self.relation_return else "Voltar à dedução" if self.sheet_return else "Voltar ao mural"
+        destination = "relation" if self.relation_return else "puzzle" if self.sheet_return else "world"
+        label = "Voltar à relação" if self.relation_return else "Voltar à dedução" if self.sheet_return else "Voltar ao banco"
         self.ui_button(label, (390, 713, 220, 44),
                        lambda: self.set_scene(destination))
         self.ui_button("Explorar banco", (630, 713, 220, 44), lambda: self.set_scene("world"))
@@ -326,7 +329,7 @@ class InvestigationUI:
             self.ui_label(time if known else "--:--", 80, y + 21, CYAN if known else s.MUTED, 150)
             self.ui_label(title if known else "Registro ainda não descoberto", 250, y + 9, s.TEXT, 840)
             self.ui_label(description if known else "Explore o banco e obtenha o registro correspondente.", 250, y + 34, s.MUTED, 840)
-        self.ui_button("Voltar ao mural", (60, 713, 230, 44), lambda: self.set_scene("board"))
+        self.ui_button("Voltar ao banco", (60, 713, 230, 44), lambda: self.set_scene("world"))
 
     def draw_case_conclusion(self):
         self.dossier_header("RECONSTRUÇÃO / CONCLUSÃO DO CASO")
@@ -343,7 +346,7 @@ class InvestigationUI:
             self.ui_button(options[self.accusation[row]] + "   >", (385, y + 27, 745, 43),
                            lambda value=row: self.toggle_final_choice(value),
                            active=self.final_choice_open == row)
-        self.ui_button("Voltar ao mural", (60, 707, 260, 46), lambda: self.set_scene("board"))
+        self.ui_button("Voltar ao banco", (60, 707, 260, 46), lambda: self.set_scene("world"))
         self.ui_button("Arriscar solução final", (385, 707, 350, 46), self.submit,
                        active=True, enabled=self.analysis_done and self.puzzle_index == len(self.puzzles))
 
@@ -369,21 +372,50 @@ class InvestigationUI:
             self.buttons.extend(base_buttons)
 
     def draw_case_menu(self):
-        self.dossier_header("DOSSIÊ 001 / ACESSO RESTRITO")
-        self.ui_label("BANCO / INVESTIGAÇÃO EM ABERTO", 54, 123, CYAN, 500)
-        self.screen.blit(self.heading.render("PROTOCOLO ZERO", True, s.TEXT), (50, 169))
-        self.text("O Mistério da Invasão Bancária", x=54, y=220, width=500, color=s.MUTED)
-        self.text("Um incidente. Oito evidências.\nUma conclusão que precisa de prova.", x=54, y=292, width=450)
-        self.text("Explore o banco, consulte os depoimentos e conecte suas hipóteses no mural. Use lógica matemática para reconstruir o incidente.", x=54, y=393, width=435, small=True, color=s.MUTED)
-        self.ui_button("INICIAR INVESTIGAÇÃO", (54, 520, 400, 48), self.start, active=True)
-        self.ui_button("Sair", (54, 583, 194, 40), lambda: setattr(self, "running", False))
-        self.ui_button("Demonstração / Seu Antônio", (54, 637, 400, 36), self.start_demo)
-        self.ui_label(self.save_message, 54, 724, s.MUTED, 440)
-        # Composição editorial com os próprios assets, sem relações pré-julgadas.
-        pygame.draw.rect(self.screen, (14, 22, 32), (520, 100, 638, 611), border_radius=8)
-        self.bank.art.draw(self.screen, 0, (560, 130, 550, 300))
-        self.ui_label("O CENÁRIO", 554, 120, CYAN, 200)
-        for index, key in enumerate(("person:1", "item:usb", "person:2")):
-            self.draw_board_card(key, (575 + index * 180, 468))
-        self.ui_label("INVESTIGAR  /  RELACIONAR  /  DEDUZIR", 580, 656, CYAN, 540)
-        self.ui_label("RESOLUÇÃO DE PROBLEMAS COM LÓGICA MATEMÁTICA", 54, 757, s.MUTED, 850)
+        self.screen.fill((5, 9, 18))
+        if not hasattr(self, "menu_background"):
+            try:
+                self.menu_background = pygame.image.load(str(MENU_BACKGROUND_PATH)).convert()
+            except (OSError, pygame.error):
+                self.menu_background = None
+        if self.menu_background is not None:
+            source = self.menu_background
+            scale = max(1200 / source.get_width(), 800 / source.get_height())
+            size = (round(source.get_width() * scale), round(source.get_height() * scale))
+            background = pygame.transform.smoothscale(source, size)
+            crop = background.get_rect(center=(600, 400))
+            self.screen.blit(background, crop)
+        else:
+            self.bank.art.draw(self.screen, 0, (0, 0, 720, 800), fill=True)
+        overlay = pygame.Surface((1200, 800), pygame.SRCALPHA)
+        overlay.fill((3, 7, 16, 145))
+        self.screen.blit(overlay, (0, 0))
+        pygame.draw.rect(self.screen, (7, 12, 23), (645, 0, 555, 800))
+        pygame.draw.line(self.screen, (65, 77, 102), (645, 0), (645, 800), 2)
+
+        menu_title = pygame.font.SysFont("segoeui,dejavusans,arial", 66, bold=True)
+        menu_subtitle = pygame.font.SysFont("segoeui,dejavusans,arial", 20, bold=True)
+        self.screen.blit(menu_title.render("PROTOCOLO", True, (242, 231, 225)), (700, 92))
+        self.screen.blit(menu_title.render("ZERO", True, s.RED), (700, 157))
+        self.screen.blit(menu_subtitle.render("O MISTÉRIO DA INVASÃO BANCÁRIA", True, s.TEXT), (704, 245))
+        pygame.draw.line(self.screen, s.GOLD, (704, 280), (1115, 280), 2)
+        self.ui_label("Um caso. Oito evidências. Uma verdade.", 704, 302, s.MUTED, 430)
+
+        def menu_button(label, rect, action, active=False):
+            rect = pygame.Rect(rect)
+            hovered = rect.collidepoint(self.mouse_position())
+            border = s.GOLD if active or hovered else (179, 157, 165)
+            fill = (52, 38, 42) if active or hovered else (20, 20, 32)
+            pygame.draw.rect(self.screen, (2, 5, 12), rect.move(0, 5), border_radius=5)
+            pygame.draw.rect(self.screen, fill, rect, border_radius=5)
+            pygame.draw.rect(self.screen, border, rect, 2, border_radius=5)
+            label_surface = self.font.render(label, True, (245, 231, 231))
+            self.screen.blit(label_surface, label_surface.get_rect(center=rect.center))
+            self.buttons.append((rect, action))
+
+        menu_button("▶   JOGAR", (760, 370, 360, 62), self.start, active=True)
+        menu_button("⚙   COMO JOGAR", (760, 450, 360, 58),
+                    lambda: self.set_scene("instructions"))
+        menu_button("X   SAIR", (760, 530, 360, 58),
+                    lambda: setattr(self, "running", False))
+        self.ui_label("INVESTIGAÇÃO • LÓGICA • EVIDÊNCIAS", 704, 704, s.MUTED, 430)

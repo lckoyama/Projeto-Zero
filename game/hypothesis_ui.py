@@ -93,7 +93,7 @@ class HypothesisUI:
     def remove_relation(self):
         self.board.links.discard(self.relation_pair)
         self.board.reviews.pop(self.relation_pair, None)
-        self.set_scene("board")
+        self.set_scene("world")
 
     def relation_status(self, pair):
         return assess_review(pair, self.board.reviews.get(pair), self.inventory.ids, self.talked, self.topics)
@@ -102,7 +102,7 @@ class HypothesisUI:
         pair = self.relation_pair
         review = self.board.reviews[pair]
         self.dossier_header("MURAL / VERIFICAR UMA RELAÇÃO")
-        self.ui_button("Voltar ao mural", (1000, 17, 175, 32), lambda: self.set_scene("board"))
+        self.ui_button("Voltar ao banco", (1000, 17, 175, 32), lambda: self.set_scene("world"))
         self.entry_art(pair[0], (28, 83, 70, 80))
         self.entry_art(pair[1], (1100, 83, 70, 80))
         self.ui_label(self.entry(pair[0])[0] + "  /  " + self.entry(pair[1])[0], 120, 101, CYAN, 950)
@@ -158,4 +158,4 @@ class HypothesisUI:
         self.ui_label(explanation, 30, 633, color, 1130)
         self.ui_button("Verificar relação", (30, 733, 260, 44), self.verify_relation, active=True)
         self.ui_button("Retirar ligação", (310, 733, 230, 44), self.remove_relation)
-        self.ui_button("Voltar ao mural", (930, 733, 240, 44), lambda: self.set_scene("board"))
+        self.ui_button("Voltar ao banco", (930, 733, 240, 44), lambda: self.set_scene("world"))

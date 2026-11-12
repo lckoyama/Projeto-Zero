@@ -216,7 +216,7 @@ class Game(ResultsUI, NotesUI, BoardNavigation, TheoryUI, ComparisonUI, Hypothes
         self.feedback = ""
         self.correct = False
         if self.puzzle_index == len(self.puzzles):
-            self.scene = "board"
+            self.scene = "conclusion"
 
     def change_choice(self, row):
         self.accusation[row] = (self.accusation[row] + 1) % len(self.final_options()[row])
@@ -247,10 +247,10 @@ class Game(ResultsUI, NotesUI, BoardNavigation, TheoryUI, ComparisonUI, Hypothes
     def handle_event(self, event):
         if self.scene == "notes" and self.notes_event(event):
             return
+        if self.scene == "puzzle" and self.sheet_drag_event(event):
+            return
         if event.type == pygame.MOUSEBUTTONUP or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE):
             self.drag_key = None
-        if self.scene == "board" and self.board_event(event):
-            return
         if event.type == pygame.QUIT:
             self.running = False
         elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
@@ -263,7 +263,7 @@ class Game(ResultsUI, NotesUI, BoardNavigation, TheoryUI, ComparisonUI, Hypothes
             if key == pygame.K_ESCAPE:
                 if self.scene == "world":
                     self.scene = "pause"
-                elif self.scene in ("dialogue", "inventory", "board", "pause", "ability", "ability_records"):
+                elif self.scene in ("dialogue", "inventory", "pause", "ability", "ability_records"):
                     self.scene = "world"
                 elif self.scene == "dossier" and self.relation_return:
                     self.relation_return = False
@@ -272,11 +272,13 @@ class Game(ResultsUI, NotesUI, BoardNavigation, TheoryUI, ComparisonUI, Hypothes
                     self.sheet_return = False
                     self.scene = "puzzle"
                 elif self.scene in ("puzzle", "conclusion", "error", "dossier", "timeline", "relation", "comparison", "theory", "proof"):
-                    self.scene = "board"
+                    self.scene = "world"
                 elif self.scene == "instructions":
                     self.scene = "menu"
+                elif self.scene == "tutorial":
+                    self.scene = "intro"
                 elif self.scene == "intro":
-                    self.scene = "board"
+                    self.scene = "menu"
             elif self.scene == "world":
                 if key == pygame.K_e:
                     self.interact()
@@ -287,14 +289,16 @@ class Game(ResultsUI, NotesUI, BoardNavigation, TheoryUI, ComparisonUI, Hypothes
                     if len(self.talked) == len(self.characters) and len(self.inventory.ids) == len(self.evidence):
                         self.begin_analysis()
                     else:
-                        self.scene = "board"
+                        self.message = "Reúna todos os depoimentos e evidências para liberar os desafios."
             elif self.scene == "dialogue":
                 if key == pygame.K_h:
                     self.open_ability()
                 elif key in (pygame.K_e, pygame.K_RETURN, pygame.K_SPACE):
                     self.scene = "world"
+            elif self.scene == "tutorial" and key == pygame.K_RETURN:
+                self.scene = "world"
             elif self.scene == "intro" and key == pygame.K_RETURN:
-                self.scene = "board"
+                self.scene = "world"
             elif self.scene == "puzzle":
                 self.sheet_keyboard(key)
 
@@ -331,15 +335,28 @@ class Game(ResultsUI, NotesUI, BoardNavigation, TheoryUI, ComparisonUI, Hypothes
         self.text(f"EVIDÊNCIAS  {len(self.inventory.ids)}/8", 718, 28, 150, s.GOLD, small=True)
         self.text(f"DEPOIMENTOS  {len(self.talked)}/7", 915, 28, 170, s.GREEN, small=True)
         complete = len(self.talked) == len(self.characters) and len(self.inventory.ids) == len(self.evidence)
-        prompt = ("Todos os depoimentos e evidências foram coletados. Pressione J para resolver a lógica."
+        prompt = ("[J]  RESOLVER MISTÉRIO  •  TODOS OS DEPOIMENTOS E EVIDÊNCIAS FORAM COLETADOS."
                   if complete else
                   "E • " + target[1].get("name", target[1].get("object", "")) if target else self.message)
         pygame.draw.rect(self.screen, s.PANEL_DARK, (20, 678, 1160, 95), border_radius=10)
-        pygame.draw.rect(self.screen, s.EDGE, (20, 678, 1160, 95), 1, border_radius=10)
-        prompt_color = s.GREEN if target else s.TEXT
+        pygame.draw.rect(self.screen, s.GOLD if complete else s.EDGE,
+                         (20, 678, 1160, 95), 2 if complete else 1, border_radius=10)
+        if complete:
+            pygame.draw.rect(self.screen, (64, 46, 22), (32, 688, 1136, 39), border_radius=6)
+        prompt_color = s.GOLD if complete else (s.GREEN if target else s.TEXT)
         self.text(prompt, 42, 694, 1115, prompt_color)
-        self.text("WASD / setas  mover     E  interagir     I / Tab  evidências     J  mural     Esc  pausa",
-                  42, 743, 1115, s.MUTED, small=True)
+        controls = (
+            ("WASD / SETAS  MOVER", 42, 190),
+            ("E  INTERAGIR", 250, 135),
+            ("I / TAB  EVIDÊNCIAS", 405, 185),
+            ("J  RESOLVER MISTÉRIO", 610, 230),
+            ("ESC  PAUSA", 860, 150),
+        )
+        for index, (label, x, width) in enumerate(controls):
+            self.text(label, x, 743, width, s.MUTED, small=True)
+            if index < len(controls) - 1:
+                pygame.draw.line(self.screen, s.EDGE, (x + width + 10, 741),
+                                 (x + width + 10, 759), 1)
 
     def draw_target_label(self, label, position, color):
         text = self.small.render(label, True, s.TEXT)
@@ -451,20 +468,37 @@ class Game(ResultsUI, NotesUI, BoardNavigation, TheoryUI, ComparisonUI, Hypothes
             self.title("Como investigar")
             self.text("WASD ou setas: mover. E: interagir quando estiver perto.\n"
                       "Retratos azuis: personagens. Ícones e quadrados dourados: objetos e registros. Verde: já consultado.\n"
-                      "I ou Tab: inventário. J: painel de investigação. Esc: voltar ou pausar.\n\n"
-                      "No mural, arraste fichas e use Ligar fichas para conectar duas hipóteses. Use o catálogo lateral para consultar pessoas, itens, locais e pistas.\n"
-                      "Clique em Explorar banco para entrar nas salas pelas portas do corredor. Reúna oito pistas e volte com J para resolver os desafios.\n\n"
+                      "I ou Tab: inventário. J: resolver desafios quando a investigação estiver completa. Esc: voltar ou pausar.\n\n"
+                      "Clique em Explorar banco para entrar nas salas pelas portas do corredor. Reúna oito pistas e converse com as sete pessoas.\n\n"
                       "Na mesa de dedução, clique numa lacuna e escolha uma opção (1–4). Tab muda de campo; Enter verifica e continua após o resultado.\n"
                       "Símbolos: ¬ não; & e; | ou inclusivo; → se... então; ↔ se e somente se.\n\n"
                       "Nos diálogos, use H ou o botão para consultar a habilidade. Examine os objetos solicitados antes de ativá-la.\n"
-                      "Salve pelo botão Salvar no mural ou pela pausa no banco. Carregue pelo menu ou pela pausa.", y=140)
+                      "Salve pela pausa no banco. Carregue pelo menu ou pela pausa.", y=140)
             self.button("Voltar ao menu", (60, 710, 300, 56), lambda: self.set_scene("menu"))
+        elif self.scene == "tutorial":
+            self.title("Tutorial rápido", "Antes de começar")
+            self.text(
+                "Você investiga uma invasão bancária. Explore as salas, converse com as pessoas "
+                "e recolha as oito evidências.\n\n"
+                "WASD ou setas  •  mover\n"
+                "E  •  interagir com pessoas e objetos\n"
+                "I ou Tab  •  inventário\n"
+                "J  •  resolver desafios quando estiver pronto\n"
+                "Esc  •  voltar ou pausar\n\n"
+                "Quando reunir as evidências, resolva as deduções e apresente "
+                "a conclusão. Não acuse ninguém apenas por profissão, idade ou conhecimento tecnológico.",
+                y=150,
+                width=900,
+            )
+            self.button("Começar investigação", (60, 650, 400, 60), lambda: self.set_scene("world"))
+            self.button("Voltar ao menu", (480, 650, 300, 60), lambda: self.set_scene("menu"))
         elif self.scene == "intro":
             self.title("Fase 1 / O incidente")
             mode = ("Demonstração acadêmica: caso fixo de Seu Antônio."
                     if self.demo_mode else "A solução é sorteada a cada nova investigação.")
             self.text(self.case["intro"] + "\n\n" + mode + " Leia os laudos desta partida; carregar preserva o mesmo caso.", y=180)
-            self.button("Abrir investigação [Enter]", (60, 550, 440, 60), lambda: self.set_scene("board"))
+            self.button("Começar investigação [Enter]", (60, 550, 440, 60),
+                        lambda: self.set_scene("world"))
         elif self.scene == "dialogue":
             self.title(self.dialogue_title)
             portrait = self.active_person and self.character_art.draw(
@@ -478,6 +512,9 @@ class Game(ResultsUI, NotesUI, BoardNavigation, TheoryUI, ComparisonUI, Hypothes
                 ability = ABILITIES[self.active_person]
                 self.text(ability["name"] + " — " + ability["description"],
                           x=text_x, y=520, width=text_width, color=s.BLUE)
+                if not self.ability_available(self.active_person):
+                    self.text(self.ability_requirement_text(self.active_person),
+                              x=text_x, y=575, width=text_width, color=s.GOLD, small=True)
                 self.button("Consultar habilidade [H]", (60, 625, 500, 56), self.open_ability,
                             enabled=self.ability_available(self.active_person))
             self.button("Continuar [E / Enter]", (60, 710, 430, 56), lambda: self.set_scene("world"))
@@ -487,8 +524,6 @@ class Game(ResultsUI, NotesUI, BoardNavigation, TheoryUI, ComparisonUI, Hypothes
             self.draw_ability_records()
         elif self.scene == "inventory":
             self.draw_inventory()
-        elif self.scene == "board":
-            self.draw_board()
         elif self.scene == "relation":
             self.draw_relation()
         elif self.scene == "comparison":

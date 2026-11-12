@@ -38,7 +38,7 @@ class TheoryUI:
 
     def draw_theory(self):
         self.dossier_header("MURAL / RECONSTRUÇÃO")
-        self.ui_button("Voltar ao mural", (1000, 17, 175, 32), lambda: self.set_scene("board"))
+        self.ui_button("Voltar ao banco", (1000, 17, 175, 32), lambda: self.set_scene("world"))
         self.ui_label("Selecione um campo, escolha sua hipótese e associe uma ou mais provas. Clique em Ler para consultar a fonte.", 25, 89, s.MUTED, 1150)
         labels = ["PESSOA", "AÇÃO", "EQUIPAMENTO", "HORÁRIO INICIAL"]
         results = self.theory_results()

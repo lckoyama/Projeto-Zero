@@ -51,6 +51,7 @@ DIGITAL_PUZZLE = {
     "context": "R: o registro está preservado. A: a análise está autorizada. L: a leitura pode ser liberada. Premissas do procedimento: R, A e (R & A) → L. Qual conclusão decorre dessas premissas?",
     "premises": ["R", "A", ("implies", ("and", "R", "A"), "L")],
     "options": [("¬L", ("not", "L")), ("L", "L"), ("¬R", ("not", "R"))],
+    "hint": "Combine as duas condições autorizadoras e aplique Modus Ponens à condicional do procedimento.",
     "explanation": "R e A permitem R & A; com (R & A) → L, Modus Ponens permite L. Isso libera a análise, não uma conclusão sobre a invasão.",
 }
 

@@ -41,7 +41,7 @@ class ComparisonUI:
 
     def draw_comparison(self):
         self.dossier_header("DEPOIMENTOS / COMPARAR COM EVIDÊNCIAS")
-        self.ui_button("Voltar ao mural", (1000, 17, 175, 32), lambda: self.set_scene("board"))
+        self.ui_button("Voltar ao banco", (1000, 17, 175, 32), lambda: self.set_scene("world"))
         self.ui_label("Escolha um trecho e uma fonte. A comparação avalia essa afirmação, não a culpa da pessoa.",
                       30, 91, s.MUTED, 1135)
         for rect in [(25, 130, 557, 395), (598, 130, 577, 395)]:

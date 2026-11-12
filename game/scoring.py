@@ -38,7 +38,7 @@ class Score:
                 self.points += 20
         else:
             self.errors += 1
-            self.points -= 10
+            self.points -= 15
         self.events.append(["answer", key, correct])
         return True
 
@@ -48,7 +48,7 @@ class Score:
             return False
         self.hints.add(key)
         self.hints_used += 1
-        self.points -= 5
+        self.points -= 8
         self.events.append(["hint", key])
         return True
 
@@ -62,7 +62,7 @@ class Score:
                 self.correct += 1
                 self.won = True
         else:
-            self.points -= 20
+            self.points -= 30
             self.errors += 1
         self.events.append(["accusation", list(choices), correct])
         return True
