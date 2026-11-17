@@ -4,15 +4,17 @@ Jogo local de investigação top-down, feito apenas com Python e Pygame para a d
 
 ## Iniciar o jogo
 
-Na pasta do projeto, abra o terminal do PowerShell e execute:
+Na pasta do projeto, execute o comando correspondente ao seu sistema:
 
-```powershell
-.\.venv\Scripts\python.exe main.py 
-ou 
+```sh
+# macOS/Linux
 ./.venv/bin/python main.py
+
+# Windows PowerShell
+.\.venv\Scripts\python.exe main.py
 ```
 
-Se o ambiente Python já estiver ativado, use `python main.py`. Na primeira execução, crie o ambiente e instale as dependências seguindo a seção [Executar no VS Code](#executar-no-vs-code).
+Se o ambiente Python já estiver ativado, use `python main.py`. No VS Code, selecione o interpretador `.venv` antes de executar. Na primeira execução, crie o ambiente e instale as dependências seguindo a seção [Executar no VS Code](#executar-no-vs-code).
 
 ## Pontuação e requisitos acadêmicos
 
@@ -23,6 +25,8 @@ Essas regras também se aplicam aos sete desafios de autorização das habilidad
 **Pedir dica** está disponível nas deduções e nas habilidades pendentes. Cada desafio possui uma dica; ela permanece disponível para releitura, inclusive após carregar, sem outra cobrança. A dica orienta sobre a regra ou o raciocínio, mas não revela a resposta nem preenche as lacunas. Consultá-la não conta como tentativa incorreta.
 
 Após reunir as oito evidências e concluir as oito deduções, use **Apresentar conclusão → Arriscar solução final**. Uma conclusão correta concede **+50** uma única vez. Uma acusação incorreta custa **30 pontos** e abre a tela de derrota. **Revisar conclusão** permite uma nova tentativa, com a mesma investigação; cada nova acusação incorreta é penalizada, inclusive se repetir a combinação. Cliques duplicados enquanto o resultado está aberto não repetem a cobrança. Pontuação negativa não apaga a investigação nem impede recuperação.
+
+Durante a resolução, a oitava resposta lógica incorreta encerra a investigação e abre a tela de derrota. Esse limite considera erros nas deduções e nos desafios das habilidades.
 
 O banco exibe a pontuação. As telas de vitória e derrota mostram pontos, acertos, erros, dicas, evidências, deduções e habilidades concluídas, além de **Nova partida**, **Salvar resultado** e retorno ao menu. Acertos incluem desafios lógicos corretos (mesmo após erro) e a primeira conclusão correta; erros incluem respostas lógicas e acusações incorretas. Deduções concluídas continuam contadas separadamente, de 0 a 8.
 

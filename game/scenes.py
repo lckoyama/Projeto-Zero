@@ -92,6 +92,7 @@ class Game(ResultsUI, NotesUI, BoardNavigation, TheoryUI, ComparisonUI, Hypothes
         self.player = Player()
         self.proof_page = 0
         self.score = Score()
+        self.investigation_defeated = False
         self.inventory = Inventory(self.score.find_evidence)
         self.abilities = AbilitySystem(self.case["ability_results"])
         self.active_person = None
@@ -127,8 +128,17 @@ class Game(ResultsUI, NotesUI, BoardNavigation, TheoryUI, ComparisonUI, Hypothes
         self.scene = "intro"
 
     def retry_conclusion(self):
+        if self.investigation_defeated:
+            return
         self.score.outcome = None
         self.set_scene("conclusion")
+
+    def register_investigation_answer(self, correct):
+        if correct or self.investigation_defeated:
+            return
+        if self.score.errors >= s.MAX_INVESTIGATION_ERRORS:
+            self.investigation_defeated = True
+            self.set_scene("error")
 
     def text(self, text, x=60, y=100, width=1080, color=s.TEXT, small=False):
         return draw_text(self.screen, text, self.small if small else self.font, x, y, width, color)
@@ -210,6 +220,8 @@ class Game(ResultsUI, NotesUI, BoardNavigation, TheoryUI, ComparisonUI, Hypothes
             self.show_dialogue(item["object"], item["text"], "computer")
 
     def next_puzzle(self):
+        if self.investigation_defeated:
+            return
         if self.correct:
             self.puzzle_index += 1
             self.reset_sheet()
@@ -235,6 +247,8 @@ class Game(ResultsUI, NotesUI, BoardNavigation, TheoryUI, ComparisonUI, Hypothes
                 ["19h50", "20h20", "20h30", "20h35", "20h45", "21h07", "21h15"]]
 
     def submit(self):
+        if self.investigation_defeated:
+            return
         if self.analysis_done and self.puzzle_index == len(self.puzzles):
             if (self.scene in ("victory", "error") and self.score.outcome is not None
                     and tuple(self.accusation) == self.score.last_accusation):

@@ -61,7 +61,9 @@ class AbilityScenes:
                 return
             correct, detail = validate(puzzle, choice)
             if not correct:
-                self.score.answer("ability:" + person["name"], False)
+                accepted = self.score.answer("ability:" + person["name"], False)
+                if accepted:
+                    self.register_investigation_answer(False)
                 self.ability_success = False
                 self.ability_feedback = "Revise a inferência. " + detail
                 return

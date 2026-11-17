@@ -65,12 +65,14 @@ class DeductionUI:
                 break
 
     def check_sheet(self):
-        if self.feedback:
+        if self.feedback or self.investigation_defeated:
             return
         if None in self.sheet_answers:
             return
         self.correct, explanation = validate_sheet(self.puzzle_index, self.puzzles[self.puzzle_index], self.sheet_answers)
-        self.score.answer(f"sheet:{self.puzzle_index}", self.correct)
+        accepted = self.score.answer(f"sheet:{self.puzzle_index}", self.correct)
+        if accepted:
+            self.register_investigation_answer(self.correct)
         self.feedback = ("Dedução validada. " if self.correct else "Revise sua dedução. ") + explanation
 
     def request_hint(self):

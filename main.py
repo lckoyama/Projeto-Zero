@@ -2,7 +2,11 @@
 try:
     import pygame
 except ImportError:
-    raise SystemExit("Pygame não instalado. Execute: python -m pip install -r requirements.txt")
+    raise SystemExit(
+        "Pygame não instalado neste interpretador. "
+        "Use ./.venv/bin/python main.py ou instale com: "
+        "python -m pip install -r requirements.txt"
+    )
 
 from game.scenes import Game
 

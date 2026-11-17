@@ -1,10 +1,15 @@
 """Resultados da reconstrução, preservando a investigação para revisão."""
+import pygame
+
 from game import settings as s
 
 
 class ResultsUI:
     def draw_result(self, victory):
-        self.title("Vitória / caso resolvido" if victory else "Derrota / acusação incorreta")
+        result_title = ("Vitória / caso resolvido" if victory else
+                        "Derrota / limite de erros atingido" if self.investigation_defeated else
+                        "Derrota / acusação incorreta")
+        self.title(result_title)
         self.text(self.case["title"], y=95, small=True, color=s.MUTED)
         self.text(f"Pontuação final: {self.score.points}", y=122, color=s.GREEN if victory else s.RED)
         self.text(f"Acertos: {self.score.correct}     Erros: {self.score.errors}     Dicas: {self.score.hints_used}",
@@ -16,10 +21,16 @@ class ResultsUI:
             self.text(self.case["solution"], y=252, width=1080, color=s.GREEN)
             self.text("A prova formal e suas fontes estão disponíveis no botão abaixo.", y=505, small=True)
             self.button("Ver prova / slides", (60, 560, 320, 46), lambda: self.set_scene("proof"))
+        elif self.investigation_defeated:
+            self.text("Você atingiu o limite de 8 erros na resolução da investigação. "
+                      "A investigação foi encerrada.", y=270, color=s.RED)
         else:
-            self.text("A combinação escolhida não corresponde aos laudos desta investigação. "
-                      "Cada nova tentativa incorreta custa 30 pontos. Você pode revisar a conclusão. "
-                      "Evidências, habilidades e desafios concluídos foram preservados.", y=265)
+            panel = pygame.Rect(60, 250, 1080, 130)
+            pygame.draw.rect(self.screen, s.PANEL_DARK, panel, border_radius=8)
+            pygame.draw.rect(self.screen, s.RED, panel, 2, border_radius=8)
+            self.text("Você perdeu", x=90, y=270, color=s.RED)
+            self.text("A acusação não corresponde às evidências. Revise sua conclusão e tente novamente.",
+                      x=90, y=320, width=1000, small=True)
             self.button("Revisar conclusão", (60, 430, 340, 48), self.retry_conclusion)
             self.button("Consultar evidências", (420, 430, 340, 48), lambda: self.set_scene("inventory"))
         self.button("Nova partida", (60, 650, 270, 48), self.start)

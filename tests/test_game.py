@@ -79,13 +79,14 @@ class GameTests(unittest.TestCase):
         self.assertTrue(game.analysis_done)
         for puzzle_index, puzzle in enumerate(game.puzzles):
             combinations = list(product(*(range(len(choices)) for _, choices in SHEETS[puzzle_index]["fields"])))
-            wrong = next(values for values in combinations if not validate_sheet(puzzle_index, puzzle, values)[0])
             before = game.puzzle_index
-            game.sheet_answers = list(wrong)
-            game.check_sheet()
-            game.draw()
-            game.next_puzzle()
-            self.assertEqual(game.puzzle_index, before)
+            if puzzle_index < 7:
+                wrong = next(values for values in combinations if not validate_sheet(puzzle_index, puzzle, values)[0])
+                game.sheet_answers = list(wrong)
+                game.check_sheet()
+                game.draw()
+                game.next_puzzle()
+                self.assertEqual(game.puzzle_index, before)
             right = next(values for values in combinations if validate_sheet(puzzle_index, puzzle, values)[0])
             game.sheet_answers = list(right)
             game.check_sheet()
@@ -106,6 +107,15 @@ class GameTests(unittest.TestCase):
         self.assertFalse(any(action == game.open_notes for _, action in game.buttons))
         game.handle_event(pygame.event.Event(pygame.QUIT))
         self.assertFalse(game.running)
+
+    def test_eighth_investigation_error_defeats_player(self):
+        game = self.game
+        for index in range(8):
+            accepted = game.score.answer(f"test:{index}", False)
+            self.assertTrue(accepted)
+            game.register_investigation_answer(False)
+        self.assertTrue(game.investigation_defeated)
+        self.assertEqual(game.scene, "error")
 
     def test_collision_and_dialogue(self):
         class RightKeys:

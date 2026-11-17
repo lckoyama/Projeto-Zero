@@ -1,5 +1,6 @@
 WIDTH, HEIGHT = 1200, 800
 FPS = 60
+MAX_INVESTIGATION_ERRORS = 8
 TITLE = "Protocolo Zero — O Mistério da Invasão Bancária"
 BG = (12, 18, 29)
 PANEL = (23, 34, 49)
